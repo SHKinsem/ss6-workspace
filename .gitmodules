@@ -1,0 +1,12 @@
+[submodule "repos/ss6-bsp"]
+	path = repos/ss6-bsp
+	url = https://github.com/SHKinsem/ss6-bsp.git
+[submodule "repos/can-device-core"]
+	path = repos/can-device-core
+	url = https://github.com/SHKinsem/can-device-core.git
+[submodule "repos/dji-motor-driver"]
+	path = repos/dji-motor-driver
+	url = https://github.com/SHKinsem/dji-motor-driver.git
+[submodule "repos/zdt-x-driver"]
+	path = repos/zdt-x-driver
+	url = https://github.com/SHKinsem/zdt-x-driver.git
