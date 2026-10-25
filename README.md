@@ -56,10 +56,12 @@ against a physical SS6 board or motor.
 
 ## Working across packages
 
-1. Branch inside the submodule, change it, run `python tools/test_all.py`, and commit there.
+1. Branch inside the submodule, change it, run `python tools/test_all.py` from the
+   workspace root, and commit there.
 2. Push the branch and open a pull request in that package's repository. Merge it with
-   **"Create a merge commit"**. Squash and rebase rewrite commit hashes, which breaks
-   the submodule pointers recorded here.
+   **"Create a merge commit"**. This repository may already pin the PR's pre-merge
+   commits; squash and rebase leave them unreachable once the branch is deleted. Only
+   pin commits reachable from the package's `main`.
 3. When a change spans packages, merge the dependency first: core, then drivers, then ss6-bsp.
 4. Commit the updated submodule pointers here, through a pull request too, so this
    repository records which package commits were tested together.
@@ -87,6 +89,7 @@ The rules below come from manual V1.0.5. Details and page references are in
 
   | Frame | Rated current (p10) | Driver ceiling |
   | --- | --- | --- |
+  | 20 (HW_Type 0) | Not listed | 5000 mA (field limit) |
   | 28 (X28S) | 0–3000 mA | 3000 mA |
   | 35 (X35S) | 0–4000 mA | 4000 mA |
   | 42 (X42S) | 0–5000 mA | 5000 mA |
@@ -134,7 +137,7 @@ CAN analyser or the BSP adapter at the motor's configured bitrate:
 
 | # | Question | How to settle it |
 | --- | --- | --- |
-| 1 | `1A` option-status reply: 1 or 2 data bytes? (p77 table against prose) | Send `A 1A 6B` and record the reply length |
+| 1 | `1A` option-status reply: 1 or 2 data bytes? (p77 table against prose) | Send the raw frame `<addr> 1A 6B` from a CAN analyser (the driver refuses `1A`) and record the reply length |
 | 2 | `39` temperature sign (p72 against p96) | Read `39` and `43` at room temperature and compare the sign bytes |
 | 3 | `31` linear-encoder range on 14-bit (V1.0) boards | Rotate one turn by hand while reading `31` |
 | 4 | Do X28S/X35S support `C5/C6/CB/CD`? (p29 names only X42S/Y42) | Send unloaded `C5` with a small current and limit, then read the reply code (`02` or `E2`/`EE`) |
