@@ -10,3 +10,24 @@
 [submodule "repos/zdt-x-driver"]
 	path = repos/zdt-x-driver
 	url = https://github.com/SHKinsem/zdt-x-driver.git
+[submodule "repos/device-console"]
+	path = repos/device-console
+	url = https://github.com/SHKinsem/device-console.git
+[submodule "repos/wifi-setup"]
+	path = repos/wifi-setup
+	url = https://github.com/SHKinsem/wifi-setup.git
+[submodule "repos/web-console"]
+	path = repos/web-console
+	url = https://github.com/SHKinsem/web-console.git
+[submodule "repos/ss6-probe"]
+	path = repos/ss6-probe
+	url = https://github.com/SHKinsem/ss6-probe.git
+[submodule "repos/wifi-ota"]
+	path = repos/wifi-ota
+	url = https://github.com/SHKinsem/wifi-ota.git
+[submodule "repos/pid-control"]
+	path = repos/pid-control
+	url = https://github.com/SHKinsem/pid-control.git
+[submodule "repos/ss6-control"]
+	path = repos/ss6-control
+	url = https://github.com/SHKinsem/ss6-control.git

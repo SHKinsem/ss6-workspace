@@ -16,7 +16,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGES = ["can-device-core", "zdt-x-driver", "dji-motor-driver", "ss6-bsp"]
+PACKAGES = ["can-device-core", "zdt-x-driver", "dji-motor-driver", "ss6-bsp", "device-console", "pid-control"]
 
 
 def tool(name):
