@@ -62,6 +62,43 @@ matter for speed estimation. It only matters when holding position and at crawl 
 where the 0x31 linear encoder (0–65535 per revolution) would help. Its real resolution on
 the X42S has not been checked.
 
+## 2a. Measured facts: timed return (2026-11-08)
+
+These were measured on bench X42S motors (FW 105, ids 1 and 2, disabled, 1 Mbit/s). The
+diagnostic command `stream` / `streamstats` is on the ss6-control branch
+`feature/stream-diagnostics` (569739d). Manual references are to the V1.0.5
+transcription.
+
+- **Rates.** 0x36, 0x31 and 0x35 all stream at 4, 2 and 1 ms exactly as configured
+  (250, 500 and 1000 frames/s). Motor-side timing is tight: at 10 ms the interval is
+  9.94–10.05 ms. Two motors at 1 ms (2 kHz in total) arrived without loss. TWAI reported
+  0 rx-missed, 0 overruns and 0 bus errors.
+- **One timed return per motor.** A new opcode 0x11 *replaces* the running stream. Any
+  period-0 command stops it, whatever opcode it names. Position and speed therefore
+  cannot both be streamed from one motor.
+- **Streams survive an ESP32 reboot**, because they live in the motor. The control app's
+  `start` must send "off" to every motor.
+- **Commands can be lost.** One "off" got no reply and the stream kept running; a retry
+  worked. Every safety-relevant command needs confirmation and retry. ZDT commands and
+  replies share a CAN ID, and the transport sends each frame once.
+- **The ESP32 loop is the bottleneck, not the bus.** With Wi-Fi and HTTP on the same
+  loop, frames are read up to about 10 ms late and about 20% arrive bunched together. At
+  4 motors × 1 kHz, a 10 ms stall is about 40 frames, more than the 32-frame RX queue.
+  This confirms the core-1 control task (4.3).
+- **At standstill** 0x31, 0x35 and 0x36 are perfectly constant (sd 0).
+- **Manual facts:**
+  - 0x31 is 0–65535 per turn and wraps every turn. The board may have a 14-bit encoder
+    (V1.0 boards) or a 16-bit one (V2.0 boards).
+  - Uncalibrated absolute accuracy is ±0.75–1.5°.
+  - 0x35 is in 0.1 rpm. 0x27 is phase current in mA and can be timed-returned.
+  - The driver's internal torque, speed and position loops run at 20 kHz.
+  - C5 is F5 plus a maximum speed in 0.1 rpm.
+  - F5 and C5 honour the sync flag plus the `00 FF 66 6B` trigger.
+- **[open]** Real 0x31 resolution: 14- or 16-bit. It needs a hand-turn test.
+- **[proposed]** Stream 0x31 for feedback and unwrap the turns on the ESP32. Anchor and
+  check the turn count against a 0x36 read at enable and at a low rate afterwards.
+  Derive speed from 0x31. Decide after the resolution test.
+
 ## 3. Where the code is today
 
 `repos/ss6-control` (see its sources for details):
