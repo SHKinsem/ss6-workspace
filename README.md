@@ -9,6 +9,10 @@ under `repos/` and stays independently buildable and versioned in its own reposi
 | `repos/zdt-x-driver` | ZDT closed-loop stepper **X firmware** protocol for the whole family (X28S/X35S/X42S/X57S/X86S): codec, checksums, commands, telemetry, broadcast, per-frame-size current limits | can-device-core |
 | `repos/dji-motor-driver` | M2006/C610 and M3508/C620 current control and feedback | can-device-core |
 | `repos/ss6-bsp` | SS6 / ESP32-S3 N16R8 board policy and the TWAI `can_device::Transport` adapter, plus a motor demo | can-device-core (drivers only for the demo) |
+| `repos/device-console` | Allocation-free line console: command registry, local/remote sources, ring log for remote readers. Host-tested, no platform dependency | — |
+| `repos/wifi-setup` | ESP32 Arduino Wi-Fi: permanent soft AP, optional station set by a serial-only `wifi` command | device-console |
+| `repos/web-console` | ESP32 Arduino `WebServer` bridge: app page, status JSON, log polling, remote commands | device-console |
+| `repos/ss6-probe` | **Application.** Read-only hardware probe firmware (PlatformIO) for ZDT X motors 1–6, over USB serial and a web page | all of the above except dji-motor-driver |
 
 The board support package does not contain motor protocols. Motor drivers do not
 contain board or GPIO knowledge. Applications (Babytech, Tenny) own scheduling,
@@ -20,7 +24,8 @@ safety policy, persistence and network interfaces.
 | --- | --- |
 | [zdt-x-driver#1](https://github.com/SHKinsem/zdt-x-driver/pull/1) | Open. X-firmware family support. It moves in the field protocol coverage (checksums, commands, telemetry, timed return, broadcast) and adds the profile and current ceiling |
 | [ss6-bsp#1](https://github.com/SHKinsem/ss6-bsp/pull/1) | Open. Adopts the modular TWAI adapter, which removes the duplicated CAN/X42S code, and adds the motor demo. Merge it **after** zdt-x-driver#1 |
-| Host tests | 16/16 CTest tests and the motor demo pass. The ss6-bsp X/DJI integration passes 58 checks |
+| Host tests | 17/17 CTest tests and the motor demo pass. The ss6-bsp X/DJI integration passes 58 checks |
+| `ss6-probe` | Builds without warnings (`espressif32@6.4.0`). Flash it to run the hardware checklist below; see its README |
 | Hardware | **Not tested.** See the hardware checklist below |
 | Babytech `feature/astra-ss6-migration-20261020` | Still pinned to the pre-PR zdt-x-driver. Rebuild it against the merged driver before it switches |
 
@@ -54,6 +59,13 @@ ctest --test-dir build --output-on-failure
 All tests use fake transports or a fake ESP-IDF HAL. Nothing here has been run
 against a physical SS6 board or motor.
 
+The probe firmware is built with PlatformIO, not CMake:
+
+```sh
+cd repos/ss6-probe
+pio run -t upload --upload-port COMx && pio device monitor --port COMx
+```
+
 ## Working across packages
 
 1. Branch inside the submodule, change it, run `python tools/test_all.py` from the
@@ -62,7 +74,8 @@ against a physical SS6 board or motor.
    **"Create a merge commit"**. This repository may already pin the PR's pre-merge
    commits; squash and rebase leave them unreachable once the branch is deleted. Only
    pin commits reachable from the package's `main`.
-3. When a change spans packages, merge the dependency first: core, then drivers, then ss6-bsp.
+3. When a change spans packages, merge the dependency first: core, then drivers, then ss6-bsp;
+   device-console before wifi-setup and web-console; ss6-probe last.
 4. Commit the updated submodule pointers here, through a pull request too, so this
    repository records which package commits were tested together.
 

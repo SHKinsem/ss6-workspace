@@ -6,7 +6,7 @@ project(ss6_workspace LANGUAGES CXX)
 include(CTest)
 
 set(SS6_REPOS "${CMAKE_CURRENT_SOURCE_DIR}/repos")
-foreach(package can-device-core zdt-x-driver dji-motor-driver)
+foreach(package can-device-core zdt-x-driver dji-motor-driver device-console)
   if(NOT EXISTS "${SS6_REPOS}/${package}/CMakeLists.txt")
     message(FATAL_ERROR "repos/${package} is missing; run: git submodule update --init")
   endif()
@@ -15,6 +15,9 @@ endforeach()
 add_subdirectory("${SS6_REPOS}/can-device-core" can-device-core)
 add_subdirectory("${SS6_REPOS}/zdt-x-driver" zdt-x-driver)
 add_subdirectory("${SS6_REPOS}/dji-motor-driver" dji-motor-driver)
+# Only device-console has host tests among the probe libraries; wifi-setup, web-console
+# and ss6-probe are ESP32 Arduino code, built with PlatformIO in repos/ss6-probe.
+add_subdirectory("${SS6_REPOS}/device-console" device-console)
 
 # ss6-bsp finds the drivers through these cache paths when its demo is enabled.
 set(CAN_DEVICE_CORE_DIR "${SS6_REPOS}/can-device-core" CACHE PATH "" FORCE)
