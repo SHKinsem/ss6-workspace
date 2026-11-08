@@ -5,6 +5,12 @@ Status: requirements agreed with the project owner on 2026-11-08. Nothing in the
 anyone continuing the control work. Keep it current: when a requirement changes or an
 open question is answered, edit it here.
 
+**Current phase [owner, 2026-11-08]:** the main work now is a **demo that tests the SS6
+board, the CAN library (can-device-core plus the ss6-bsp TWAI adapter) and the ZDT motors
+(zdt-x-driver) as completely as possible on hardware**. The joint controller described
+here is the end goal. Use it to avoid design choices that would block it, but do not let
+it take priority over the hardware coverage work.
+
 Each statement is tagged with where it comes from:
 
 - **[owner]**: stated by the project owner. Treat it as a requirement.
