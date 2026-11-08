@@ -11,6 +11,16 @@ board, the CAN library (can-device-core plus the ss6-bsp TWAI adapter) and the Z
 here is the end goal. Use it to avoid design choices that would block it, but do not let
 it take priority over the hardware coverage work.
 
+**Layering [owner, 2026-11-08]:**
+- Each application gets **its own repository**, which composes the generic libraries
+  built here: can-device-core, ss6-bsp, zdt-x-driver, pid-control, device-console,
+  wifi-setup, web-console, wifi-ota, and later a kinematics or trajectory library.
+- ss6-probe and ss6-control are demo and test applications. The joint robot is a
+  separate, future application repo.
+- **Mechanism specifics are application layer**: link dimensions, assembly mode, frames,
+  gear ratio, joint limits and per-robot tuning. Libraries take these as parameters and
+  must not hard-code any of them.
+
 Each statement is tagged with where it comes from:
 
 - **[owner]**: stated by the project owner. Treat it as a requirement.
@@ -182,9 +192,10 @@ rate.
 - **[owner]** The PC sends **Cartesian** end-effector coordinates, one point per linkage.
   The **firmware owns the kinematics** of both 2-DOF parallel linkages.
 - **[proposed]** Kinematics on board:
-  - Per-linkage geometry parameters: link lengths, base spacing, frame origin and
-    orientation, the assembly-mode (elbow) branch, and the gear ratio. They are stored in
-    NVS and can be changed at run time.
+  - The geometry parameters of each linkage (link lengths, base spacing, frame origin and
+    orientation, assembly-mode branch, gear ratio) belong to the **joint application**. It
+    stores them in NVS, can change them at run time, and passes them to the generic
+    kinematics library.
   - Closed-form inverse kinematics, run every control cycle. For a planar five-bar it is two
     circle intersections, cheap in single-precision float on the ESP32-S3. Closed-form
     forward kinematics gives the measured end-effector position.
@@ -244,7 +255,7 @@ rate.
 | P0 Foundation | Control task on core 1; `micros` timing; jitter and drop statistics; ratio and joint units; soft limits; short lease; `C5` | Jitter measured at 250/333/500 Hz with Wi-Fi busy; no missed cycles |
 | P0 Measure | Torque–speed curve of X42S at 20 V; Kt calibration; 0x31 resolution | Ratio N chosen with data |
 | P1 Impedance | Control law 4.1, friction and inertia feed-forward, 4-axis sync | Stick-slip gone; step and sine tracking error within target **[open: target]** |
-| P2a Kinematics | Linkage IK/FK/Jacobian, workspace and singularity checks, as a separate host-tested header-only package (like pid-control), with no platform dependency | Host tests: IK∘FK round trip, Jacobian against finite differences, rejection at the workspace edge |
+| P2a Kinematics | Linkage IK/FK/Jacobian, workspace and singularity checks, as a separate host-tested header-only package (like pid-control), with no platform dependency. The geometry is a parameter; the robot's dimensions live in the joint application repo | Host tests: IK∘FK round trip, Jacobian against finite differences, rejection at the workspace edge |
 | P2b Trajectory | UDP keyframe protocol in Cartesian coordinates, on-board buffer, Cartesian interpolation plus IK per cycle, clock sync, PC sender tool | Two linkages replay a PC-generated trajectory together |
 | P3 Position mode | Driver-internal position via CAN stream or STEP/DIR, bumpless switching, sensorless homing | Joint repeats a trajectory after homing |
 
