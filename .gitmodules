@@ -22,3 +22,12 @@
 [submodule "repos/ss6-probe"]
 	path = repos/ss6-probe
 	url = https://github.com/SHKinsem/ss6-probe.git
+[submodule "repos/wifi-ota"]
+	path = repos/wifi-ota
+	url = https://github.com/SHKinsem/wifi-ota.git
+[submodule "repos/pid-control"]
+	path = repos/pid-control
+	url = https://github.com/SHKinsem/pid-control.git
+[submodule "repos/ss6-control"]
+	path = repos/ss6-control
+	url = https://github.com/SHKinsem/ss6-control.git

@@ -12,7 +12,10 @@ under `repos/` and stays independently buildable and versioned in its own reposi
 | `repos/device-console` | Allocation-free line console: command registry, local/remote sources, ring log for remote readers. Host-tested, no platform dependency | — |
 | `repos/wifi-setup` | ESP32 Arduino Wi-Fi: permanent soft AP, optional station set by a serial-only `wifi` command | device-console |
 | `repos/web-console` | ESP32 Arduino `WebServer` bridge: app page, status JSON, log polling, remote commands | device-console |
-| `repos/ss6-probe` | **Application.** Read-only hardware probe firmware (PlatformIO) for ZDT X motors 1–6, over USB serial and a web page | all of the above except dji-motor-driver |
+| `repos/wifi-ota` | ESP32 Arduino password-protected flashing over Wi-Fi (ArduinoOTA / espota), `ota` status command | device-console |
+| `repos/pid-control` | Header-only discrete PID, float and Q16.16 fixed point: D on measurement, conditional-integration anti-windup, clamp, slew, setpoint weighting. Host-tested | — |
+| `repos/ss6-probe` | **Application.** Read-only hardware probe firmware (PlatformIO) for ZDT X motors 1–6, over USB serial and a web page; reflashable over Wi-Fi | all of the above except dji-motor-driver and pid-control |
+| `repos/ss6-control` | **Application.** Position PID → ZDT F5 current (torque) for motors 1–6. Motors start disabled; current limit, speed clamp, overspeed/feedback/status faults, heartbeat lease, e-stop; control commands without replies, confirmed by `3A` status; raw CAN frames for debugging; web page; OTA | all of the above except dji-motor-driver |
 
 The board support package does not contain motor protocols. Motor drivers do not
 contain board or GPIO knowledge. Applications (Babytech, Tenny) own scheduling,
@@ -22,11 +25,13 @@ safety policy, persistence and network interfaces.
 
 | Item | State |
 | --- | --- |
-| [zdt-x-driver#1](https://github.com/SHKinsem/zdt-x-driver/pull/1) | Open. X-firmware family support. It moves in the field protocol coverage (checksums, commands, telemetry, timed return, broadcast) and adds the profile and current ceiling |
-| [ss6-bsp#1](https://github.com/SHKinsem/ss6-bsp/pull/1) | Open. Adopts the modular TWAI adapter, which removes the duplicated CAN/X42S code, and adds the motor demo. Merge it **after** zdt-x-driver#1 |
-| Host tests | 17/17 CTest tests and the motor demo pass. The ss6-bsp X/DJI integration passes 58 checks |
-| `ss6-probe` | Builds without warnings (`espressif32@6.4.0`). Flash it to run the hardware checklist below; see its README |
-| Hardware | **Not tested.** See the hardware checklist below |
+| [zdt-x-driver#1](https://github.com/SHKinsem/zdt-x-driver/pull/1), [ss6-bsp#1](https://github.com/SHKinsem/ss6-bsp/pull/1) | Merged: X-firmware family support; modular TWAI adapter and motor demo |
+| [ss6-bsp#3](https://github.com/SHKinsem/ss6-bsp/pull/3) | Open. Motor ids follow the connector slots in a U (U12, U11, U10, U13, U14, U15) |
+| [zdt-x-driver#2](https://github.com/SHKinsem/zdt-x-driver/pull/2) | Open. `RequestOptions::expectReply=false` for control commands. Opened against the #1 branch, which is merged; retarget it to `main` |
+| [device-console#1](https://github.com/SHKinsem/device-console/pull/1) | Open. Quiet commands (no remote echo) for the heartbeat |
+| [ss6-probe#1](https://github.com/SHKinsem/ss6-probe/pull/1), [ss6-probe#2](https://github.com/SHKinsem/ss6-probe/pull/2) | Open. Wi-Fi OTA and quarantine clearing; then (stacked on #1) the run-time CAN bitrate |
+| Host tests | 18/18 CTest tests and the motor demo pass. The ss6-bsp X/DJI integration passes 58 checks |
+| Hardware | Bench-tested on the intermediate board with two X42S (FW_Ver 105, addresses 1 and 2) at 1 Mbit/s: ss6-probe reads, Wi-Fi and OTA; ss6-control closed loop ±10° at 150 mA / 200 Hz (kp 10, ki 20, kd 2) settles within about 1°. Unloaded motors only; the checklist below is still open |
 | Babytech `feature/astra-ss6-migration-20261020` | Still pinned to the pre-PR zdt-x-driver. Rebuild it against the merged driver before it switches |
 
 The submodules are private repositories. Cloning them needs read access to
