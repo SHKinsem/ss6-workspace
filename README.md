@@ -17,6 +17,9 @@ under `repos/` and stays independently buildable and versioned in its own reposi
 | `repos/ss6-probe` | **Application.** Read-only hardware probe firmware (PlatformIO) for ZDT X motors 1–6, over USB serial and a web page; reflashable over Wi-Fi | all of the above except dji-motor-driver and pid-control |
 | `repos/ss6-control` | **Application.** Position PID → ZDT F5 current (torque) for motors 1–6. Motors start disabled; current limit, speed clamp, overspeed/feedback/status faults, heartbeat lease, e-stop; control commands without replies, confirmed by `3A` status; raw CAN frames for debugging; web page; OTA | all of the above except dji-motor-driver |
 
+Requirements and planned direction for the joint controller (torque control, trajectory
+tracking, gearing, roadmap, open questions): [docs/joint-control-requirements.md](docs/joint-control-requirements.md).
+
 The board support package does not contain motor protocols. Motor drivers do not
 contain board or GPIO knowledge. Applications (Babytech, Tenny) own scheduling,
 safety policy, persistence and network interfaces.
