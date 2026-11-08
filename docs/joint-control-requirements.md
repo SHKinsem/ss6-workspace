@@ -94,7 +94,9 @@ transcription.
   - The driver's internal torque, speed and position loops run at 20 kHz.
   - C5 is F5 plus a maximum speed in 0.1 rpm.
   - F5 and C5 honour the sync flag plus the `00 FF 66 6B` trigger.
-- **[open]** Real 0x31 resolution: 14- or 16-bit. It needs a hand-turn test.
+- **0x31 is true 16-bit on the bench X42S (motor 1).** In a hand-turn test, 10005 frames at
+  1 ms gave 4365 distinct values with smallest step 1 and gcd step 1, so about 0.0055°
+  per count, 18× finer than 0x36.
 - **[proposed]** Stream 0x31 for feedback and unwrap the turns on the ESP32. Anchor and
   check the turn count against a 0x36 read at enable and at a low rate afterwards.
   Derive speed from 0x31. Decide after the resolution test.
