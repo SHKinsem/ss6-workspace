@@ -29,12 +29,9 @@ safety policy, persistence and network interfaces.
 | Item | State |
 | --- | --- |
 | [zdt-x-driver#1](https://github.com/SHKinsem/zdt-x-driver/pull/1), [ss6-bsp#1](https://github.com/SHKinsem/ss6-bsp/pull/1) | Merged: X-firmware family support; modular TWAI adapter and motor demo |
-| [ss6-bsp#3](https://github.com/SHKinsem/ss6-bsp/pull/3) | Open. Motor ids follow the connector slots in a U (U12, U11, U10, U13, U14, U15) |
-| [zdt-x-driver#2](https://github.com/SHKinsem/zdt-x-driver/pull/2) | Open. `RequestOptions::expectReply=false` for control commands. Opened against the #1 branch, which is merged; retarget it to `main` |
-| [device-console#1](https://github.com/SHKinsem/device-console/pull/1) | Open. Quiet commands (no remote echo) for the heartbeat |
-| [ss6-probe#1](https://github.com/SHKinsem/ss6-probe/pull/1), [ss6-probe#2](https://github.com/SHKinsem/ss6-probe/pull/2) | Open. Wi-Fi OTA and quarantine clearing; then (stacked on #1) the run-time CAN bitrate |
-| Host tests | 18/18 CTest tests and the motor demo pass. The ss6-bsp X/DJI integration passes 58 checks |
-| Hardware | Bench-tested on the intermediate board with two X42S (FW_Ver 105, addresses 1 and 2) at 1 Mbit/s: ss6-probe reads, Wi-Fi and OTA; ss6-control closed loop ±10° at 150 mA / 200 Hz (kp 10, ki 20, kd 2) settles within about 1°. Unloaded motors only; the checklist below is still open |
+| [ss6-bsp#3](https://github.com/SHKinsem/ss6-bsp/pull/3), [zdt-x-driver#2](https://github.com/SHKinsem/zdt-x-driver/pull/2), [device-console#1](https://github.com/SHKinsem/device-console/pull/1), [web-console#1](https://github.com/SHKinsem/web-console/pull/1) and [#2](https://github.com/SHKinsem/web-console/pull/2), [ss6-probe#1](https://github.com/SHKinsem/ss6-probe/pull/1) and [#2](https://github.com/SHKinsem/ss6-probe/pull/2), [ss6-control#1](https://github.com/SHKinsem/ss6-control/pull/1) and [#2](https://github.com/SHKinsem/ss6-control/pull/2) | Merged (2026-11-08). They cover: motor ids by U-shaped slot; control commands without replies; quiet commands; a page served from LittleFS and uploadable without a reflash; probe OTA and the run-time bitrate; control live charts, stream diagnostics, a start-up sweep (verified stream-off plus disabling motors found enabled) and a log-duplication fix. Every package in this repository is pinned to its `main` |
+| Host tests | All CTest tests and the motor demo pass. ss6-control and ss6-probe build with PlatformIO |
+| Hardware | Bench-tested on the intermediate board with two X42S (FW_Ver 105, addresses 1 and 2) at 1 Mbit/s, unloaded: reads, timed-return streams at 1–10 ms (one per motor; 0x31 is true 16-bit), Wi-Fi, OTA and the page upload; ss6-control closed loop ±10° at 150 mA. What is and is not proven, and the test plan, are in [docs/hardware-coverage.md](docs/hardware-coverage.md) |
 | Babytech `feature/astra-ss6-migration-20261020` | Still pinned to the pre-PR zdt-x-driver. Rebuild it against the merged driver before it switches |
 
 The submodules are private repositories. Cloning them needs read access to
