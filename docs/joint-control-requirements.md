@@ -21,7 +21,7 @@ Each statement is tagged with where it comes from:
 | Mechanism | 4 motors forming **two 2-DOF parallel linkages**, two motors each (for example a five-bar leg) **[owner]** |
 | Control modes | **Torque control is required.** Position control comes later and may use the driver's STEP/DIR input **[owner]** |
 | Motion | **Continuous trajectory tracking** **[owner]** |
-| Trajectory source | Generated **in advance on a PC** and sent **probably over UDP**, in a way modelled on funscript (timestamped keyframes) **[owner]** |
+| Trajectory source | Generated **in advance on a PC** and sent **probably over UDP**, in a way modelled on funscript (timestamped keyframes). The PC will most likely send **Cartesian coordinates**, and the **board solves the linkage kinematics** **[owner]** |
 | Reduction | 3:1 to 6:1, through a large/small **herringbone gear** pair. The exact ratio is not fixed and the gear design is out of scope for now **[owner]** |
 | Output speed | Ideally **≥ 200 rpm** at the joint **[owner]** |
 | Output torque | **1–2 N·m per motor** at the joint **[owner]** |
@@ -173,11 +173,27 @@ rate.
 
 ### 4.4 Trajectory input
 
-- The PC computes inverse kinematics of the parallel linkages and sends **joint-space**
-  (motor-side or joint-side angle) trajectories. The firmware stays kinematics-free in the
-  first version.
+- **[owner]** The PC sends **Cartesian** end-effector coordinates, one point per linkage.
+  The **firmware owns the kinematics** of both 2-DOF parallel linkages.
+- **[proposed]** Kinematics on board:
+  - Per-linkage geometry parameters: link lengths, base spacing, frame origin and
+    orientation, the assembly-mode (elbow) branch, and the gear ratio. They are stored in
+    NVS and can be changed at run time.
+  - Closed-form inverse kinematics, run every control cycle. For a planar five-bar it is two
+    circle intersections, cheap in single-precision float on the ESP32-S3. Closed-form
+    forward kinematics gives the measured end-effector position.
+  - Interpolate in Cartesian space, run IK at each cycle, and get the joint q̇ and q̈
+    feed-forward by finite differences of the IK'd trajectory, or through `J⁻¹`.
+  - The workspace check comes before execution. A keyframe outside the reachable
+    workspace, too close to a singularity (distal links near collinear, or `det J` near 0),
+    or beyond the joint limits is rejected when it is received. At run time, nearing a
+    singularity stops the linkage.
+  - Cartesian impedance falls out naturally:
+    `tau = Jᵀ·(Kx·(x_ref − x) + Dx·(ẋ_ref − ẋ) + F_ff) + joint feed-forward`. Stiffness
+    can then be set per Cartesian direction.
 - Protocol: funscript-like, but adapted:
-  - timestamped keyframes per axis, in degrees (not funscript's 0–100);
+  - timestamped keyframes per linkage, in Cartesian units (mm), not funscript's 0–100.
+    They may optionally carry a velocity, and later a stiffness or force;
   - optional velocity per keyframe;
   - sent ahead of time over UDP;
   - buffered on the ESP32 and interpolated on board (cubic or quintic, so qd and qdd are
@@ -188,8 +204,6 @@ rate.
   and a buffer-underrun behaviour (hold, then stop).
 - Note on funscript: it is JSON `{"actions":[{"at":<ms>,"pos":0..100}]}`, one axis per
   script, and players interpolate linearly. Use it as a model, not as the wire format.
-- Cartesian impedance (`tau = Jᵀ·F` through the linkage Jacobian) is a later option. It
-  would put the linkage kinematics into the firmware. **[open]**
 
 ### 4.5 No output encoder: consequences
 
@@ -224,7 +238,8 @@ rate.
 | P0 Foundation | Control task on core 1; `micros` timing; jitter and drop statistics; ratio and joint units; soft limits; short lease; `C5` | Jitter measured at 250/333/500 Hz with Wi-Fi busy; no missed cycles |
 | P0 Measure | Torque–speed curve of X42S at 20 V; Kt calibration; 0x31 resolution | Ratio N chosen with data |
 | P1 Impedance | Control law 4.1, friction and inertia feed-forward, 4-axis sync | Stick-slip gone; step and sine tracking error within target **[open: target]** |
-| P2 Trajectory | UDP keyframe protocol, on-board buffer and interpolation, clock sync, PC sender tool | Two linkages replay a PC-generated trajectory together |
+| P2a Kinematics | Linkage IK/FK/Jacobian, workspace and singularity checks, as a separate host-tested header-only package (like pid-control), with no platform dependency | Host tests: IK∘FK round trip, Jacobian against finite differences, rejection at the workspace edge |
+| P2b Trajectory | UDP keyframe protocol in Cartesian coordinates, on-board buffer, Cartesian interpolation plus IK per cycle, clock sync, PC sender tool | Two linkages replay a PC-generated trajectory together |
 | P3 Position mode | Driver-internal position via CAN stream or STEP/DIR, bumpless switching, sensorless homing | Joint repeats a trajectory after homing |
 
 ## 6. Open questions
@@ -232,7 +247,14 @@ rate.
 1. Is 1–2 N·m needed at 200 rpm, or only at low speed and stall? This decides whether
    the X42S at 20 V is sufficient.
 2. Tracking accuracy and bandwidth targets at the joint (degrees of error, Hz).
-3. Joint-space or Cartesian trajectories from the PC? Who owns the linkage kinematics?
+3. Answered: the PC sends Cartesian coordinates and the board does the kinematics. Still
+   open:
+   - The exact linkage type. Is it a planar five-bar (2-RRR) or something else?
+   - Its dimensions.
+   - The working (elbow) mode.
+   - Whether the two linkages share one frame (for example a body frame) or each has its
+     own.
+   - Whether keyframes carry only position, or also velocity, stiffness or force.
 4. Final ratio N, and the herringbone gear backlash (deferred by the owner).
 5. Joint range of motion and the location of the hard stops, for homing and soft limits.
 6. UDP details: is the PC on the same LAN? Is the ESP32 a station or the AP? What is the
