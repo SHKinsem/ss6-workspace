@@ -21,6 +21,16 @@ it take priority over the hardware coverage work.
   gear ratio, joint limits and per-robot tuning. Libraries take these as parameters and
   must not hard-code any of them.
 
+**Library acceptance goals [owner, 2026-11-09]:** before more features, the stack must
+guarantee three things. The guiding idea is "as brainless as Arduino".
+
+1. **The application-level API is simple.** Calling the library takes a few obvious
+   functions. The application never handles tickets, phases, quarantine or stream setup.
+2. **Two motors run smoothly at 500 Hz.** Today's single loop does not: at 500 Hz, with
+   HTTP serving, a torque frame missed its deadline and the axis faulted (2026-11-09).
+3. **Debugging is powerful through composition.** There are as few and as simple console
+   commands as possible, and combining them gives the stronger functions.
+
 Each statement is tagged with where it comes from:
 
 - **[owner]**: stated by the project owner. Treat it as a requirement.
@@ -140,6 +150,17 @@ transcription.
 
 ## 4. Direction **[proposed]**
 
+> **Owner decision, 2026-11-09:** pause the external torque loop (4.1) and use the
+> driver's own position and velocity loops (4.2) for now. Their current-capped forms
+> (`CB`/`CD` position, `C6` velocity) keep the per-axis current limit. Revisit current
+> control when ZDT releases its CANopen firmware and examples; the owner expects that to
+> allow finer current control. **[owner]**
+>
+> Why: on the unloaded X42S, a 200 Hz external loop through F5 stick-slips. Static friction
+> is above kinetic friction (about 60 vs 45–55 mA), and the 20 rpm clamp zeroes the output
+> at every slip. Friction feed-forward and 0x31 feedback helped (tracking sd 4.1 → 2.5°)
+> but did not remove it. Details are in `docs/hardware-coverage.md`, "Control findings".
+
 ### 4.1 One control law: joint impedance
 
 ```
@@ -257,7 +278,7 @@ rate.
 | P1 Impedance | Control law 4.1, friction and inertia feed-forward, 4-axis sync | Stick-slip gone; step and sine tracking error within target **[open: target]** |
 | P2a Kinematics | Linkage IK/FK/Jacobian, workspace and singularity checks, as a separate host-tested header-only package (like pid-control), with no platform dependency. The geometry is a parameter; the robot's dimensions live in the joint application repo | Host tests: IK∘FK round trip, Jacobian against finite differences, rejection at the workspace edge |
 | P2b Trajectory | UDP keyframe protocol in Cartesian coordinates, on-board buffer, Cartesian interpolation plus IK per cycle, clock sync, PC sender tool | Two linkages replay a PC-generated trajectory together |
-| P3 Position mode | Driver-internal position via CAN stream or STEP/DIR, bumpless switching, sensorless homing | Joint repeats a trajectory after homing |
+| P3 Position mode | Driver-internal position via CAN stream or STEP/DIR, bumpless switching, sensorless homing. **Moved ahead of P1 on 2026-11-09 (owner)**: the first step is current-capped `CB`/`CD`/`C6` commands in ss6-control, which is also the first multi-frame TX on hardware | Joint repeats a trajectory after homing |
 
 ## 6. Open questions
 
