@@ -137,18 +137,19 @@ plus `ss6-control/tests/test_iap_catalog.cpp`; `ss6_intermediate` builds.
   from interrupted transfer and power interruption with vendor recovery available.
 - [ ] Record supply, hardware, initial/final versions and config, image hash, duration,
   transport counters and complete trace for every bench case.
-- [ ] Merge dependencies first (driver, then application); after their commits are
+- [x] Merge dependencies first (driver, then application); after their commits are
   reachable from main, update workspace pointers and rerun the combined checks.
+  (2026-11-10: zdt-x-driver#4/#5, ss6-bsp#5, ss6-control#6/#8.)
 
 ## Reproducing this checkpoint
 
 Exact package commits and branch names are recorded in `docs/evidence/iap-20261109-native/source-checkpoint.json`
 (address 1 checkpoint) and `docs/evidence/iap-20261109-multi-motor/source-checkpoint.json`
 (multi-address / multi-image, current).
-The workspace gitlinks intentionally stay on already-merged commits until the feature
-branches are merged, as required by the workspace workflow. For this checkpoint,
-check out the manifest's driver, BSP and application revisions before building;
-the unmodified workspace gitlinks alone do not include the native IAP implementation.
+Since 2026-11-10 the feature is merged and the workspace submodule pointers include it
+(zdt-x-driver 03ac4c4, ss6-bsp 3576cbb, ss6-control 5c36c5f), so a normal
+`git submodule update` builds it. The manifests record the feature-branch commits the
+bench runs used, which the merges contain unchanged.
 
 Do not publish the vendor firmware file or credentials with the source. The local
 acceptance helper separates staging (`upload`) from actual flash (`run`). New movement,
