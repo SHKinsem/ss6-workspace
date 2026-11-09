@@ -15,8 +15,8 @@ endforeach()
 add_subdirectory("${SS6_REPOS}/can-device-core" can-device-core)
 add_subdirectory("${SS6_REPOS}/zdt-x-driver" zdt-x-driver)
 add_subdirectory("${SS6_REPOS}/dji-motor-driver" dji-motor-driver)
-# Only device-console has host tests among the probe libraries; wifi-setup, web-console
-# and ss6-probe are ESP32 Arduino code, built with PlatformIO in repos/ss6-probe.
+# The ESP32 Arduino code (ss6-bsp's Wi-Fi, web console, OTA and CanTask, and the
+# ss6-control firmware) is built with PlatformIO in repos/ss6-control.
 add_subdirectory("${SS6_REPOS}/device-console" device-console)
 add_subdirectory("${SS6_REPOS}/pid-control" pid-control)
 

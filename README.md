@@ -6,16 +6,21 @@ under `repos/` and stays independently buildable and versioned in its own reposi
 | Package | Role | Depends on |
 | --- | --- | --- |
 | `repos/can-device-core` | One serialized CAN bus owner: device registration, RX routing, bounded TX queue, tickets | — |
-| `repos/zdt-x-driver` | ZDT closed-loop stepper **X firmware** protocol for the whole family (X28S/X35S/X42S/X57S/X86S): codec, checksums, commands, telemetry, broadcast, per-frame-size current limits | can-device-core |
+| `repos/zdt-x-driver` | ZDT closed-loop stepper **X firmware** for the whole family (X28S/X35S/X42S/X57S/X86S). `zdt_x::Motor` is the application API: one object per motor, with start-up checks, response mode, feedback, current-capped position and velocity, and watchdogs. `zdt_x::Endpoint` is the protocol layer: codec, checksums, commands, telemetry, broadcast, per-frame-size current limits | can-device-core |
 | `repos/dji-motor-driver` | M2006/C610 and M3508/C620 current control and feedback | can-device-core |
-| `repos/ss6-bsp` | SS6 / ESP32-S3 N16R8 board policy and the TWAI `can_device::Transport` adapter, plus a motor demo | can-device-core (drivers only for the demo) |
-| `repos/device-console` | Allocation-free line console: command registry, local/remote sources, ring log for remote readers. Host-tested, no platform dependency | — |
-| `repos/wifi-setup` | ESP32 Arduino Wi-Fi: permanent soft AP, optional station set by a serial-only `wifi` command | device-console |
-| `repos/web-console` | ESP32 Arduino `WebServer` bridge: app page, status JSON, log polling, remote commands | device-console |
-| `repos/wifi-ota` | ESP32 Arduino password-protected flashing over Wi-Fi (ArduinoOTA / espota), `ota` status command | device-console |
 | `repos/pid-control` | Header-only discrete PID, float and Q16.16 fixed point: D on measurement, conditional-integration anti-windup, clamp, slew, setpoint weighting. Host-tested | — |
-| `repos/ss6-probe` | **Application.** Read-only hardware probe firmware (PlatformIO) for ZDT X motors 1–6, over USB serial and a web page; reflashable over Wi-Fi | all of the above except dji-motor-driver and pid-control |
-| `repos/ss6-control` | **Application.** Position PID → ZDT F5 current (torque) for motors 1–6. Motors start disabled; current limit, speed clamp, overspeed/feedback/status faults, heartbeat lease, e-stop; control commands without replies, confirmed by `3A` status; raw CAN frames for debugging; web page; OTA | all of the above except dji-motor-driver |
+| `repos/device-console` | Allocation-free line console: command registry, local/remote sources, ring log for remote readers. Host-tested, no platform dependency | — |
+| `repos/ss6-bsp` | Everything SS6 / ESP32-S3: board policy and pins, the TWAI adapter, `CanTask` (the bus in a 500 Hz task on core 1), Wi-Fi setup, web console, OTA | can-device-core, device-console |
+| `repos/ss6-control` | **Application.** Demo and test firmware: motors 1–6 through `zdt_x::Motor` on `ss6::CanTask`, with commands over USB and Wi-Fi and OTA | all of the above except dji-motor-driver and pid-control |
+
+Merged or retired on 2026-11-09:
+
+- wifi-setup, web-console and wifi-ota are now part of ss6-bsp, with their history.
+- ss6-probe is retired. Its diagnostics are to return as ss6-control debug commands.
+- The external torque controller is removed from ss6-control. Tag
+  `archive/torque-pid-2026-11-09` keeps it.
+
+The old repositories stay on GitHub.
 
 Requirements and planned direction for the joint controller (torque control, trajectory
 tracking, gearing, roadmap, open questions): [docs/joint-control-requirements.md](docs/joint-control-requirements.md).
@@ -30,7 +35,8 @@ safety policy, persistence and network interfaces.
 | --- | --- |
 | [zdt-x-driver#1](https://github.com/SHKinsem/zdt-x-driver/pull/1), [ss6-bsp#1](https://github.com/SHKinsem/ss6-bsp/pull/1) | Merged: X-firmware family support; modular TWAI adapter and motor demo |
 | [ss6-bsp#3](https://github.com/SHKinsem/ss6-bsp/pull/3), [zdt-x-driver#2](https://github.com/SHKinsem/zdt-x-driver/pull/2), [device-console#1](https://github.com/SHKinsem/device-console/pull/1), [web-console#1](https://github.com/SHKinsem/web-console/pull/1) and [#2](https://github.com/SHKinsem/web-console/pull/2), [ss6-probe#1](https://github.com/SHKinsem/ss6-probe/pull/1) and [#2](https://github.com/SHKinsem/ss6-probe/pull/2), [ss6-control#1](https://github.com/SHKinsem/ss6-control/pull/1) and [#2](https://github.com/SHKinsem/ss6-control/pull/2) | Merged (2026-11-08). They cover: motor ids by U-shaped slot; control commands without replies; quiet commands; a page served from LittleFS and uploadable without a reflash; probe OTA and the run-time bitrate; control live charts, stream diagnostics, a start-up sweep (verified stream-off plus disabling motors found enabled) and a log-duplication fix. Every package in this repository is pinned to its `main` |
-| Host tests | All CTest tests and the motor demo pass. ss6-control and ss6-probe build with PlatformIO |
+| [zdt-x-driver#3](https://github.com/SHKinsem/zdt-x-driver/pull/3), [ss6-bsp#4](https://github.com/SHKinsem/ss6-bsp/pull/4), [ss6-control#5](https://github.com/SHKinsem/ss6-control/pull/5) | Open (2026-11-09), merge in that order: `zdt_x::Motor` and `Endpoint`, `ss6::CanTask` and the folded-in board services, and ss6-control on the new API without the torque controller. The submodule pointers here are bumped after they merge. Tracking issues: [ss6-control#3](https://github.com/SHKinsem/ss6-control/issues/3) (torque control, paused) and [#4](https://github.com/SHKinsem/ss6-control/issues/4) (the probe diagnostics as debug commands) |
+| Host tests | All 20 CTest tests and the motor demo pass. ss6-control builds with PlatformIO |
 | Hardware | Bench-tested on the intermediate board with two X42S (FW_Ver 105, addresses 1 and 2) at 1 Mbit/s, unloaded: reads, timed-return streams at 1–10 ms (one per motor; 0x31 is true 16-bit), Wi-Fi, OTA and the page upload; ss6-control closed loop ±10° at 150 mA. What is and is not proven, and the test plan, are in [docs/hardware-coverage.md](docs/hardware-coverage.md) |
 | Babytech `feature/astra-ss6-migration-20261020` | Still pinned to the pre-PR zdt-x-driver. Rebuild it against the merged driver before it switches |
 
@@ -61,14 +67,15 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-All tests use fake transports or a fake ESP-IDF HAL. Nothing here has been run
-against a physical SS6 board or motor.
+All host tests use fake transports, a fake ESP-IDF HAL or a simulated motor. Hardware
+results are in [docs/hardware-coverage.md](docs/hardware-coverage.md).
 
-The probe firmware is built with PlatformIO, not CMake:
+The firmware is built with PlatformIO, not CMake:
 
 ```sh
-cd repos/ss6-probe
+cd repos/ss6-control
 pio run -t upload --upload-port COMx && pio device monitor --port COMx
+pio run -e ss6_intermediate_ota -t upload --upload-port <board ip>   # over Wi-Fi
 ```
 
 ## Working across packages
@@ -79,8 +86,8 @@ pio run -t upload --upload-port COMx && pio device monitor --port COMx
    **"Create a merge commit"**. This repository may already pin the PR's pre-merge
    commits; squash and rebase leave them unreachable once the branch is deleted. Only
    pin commits reachable from the package's `main`.
-3. When a change spans packages, merge the dependency first: core, then drivers, then ss6-bsp;
-   device-console before wifi-setup and web-console; ss6-probe last.
+3. When a change spans packages, merge the dependency first: can-device-core and
+   device-console, then the drivers and ss6-bsp, and ss6-control last.
 4. Commit the updated submodule pointers here, through a pull request too, so this
    repository records which package commits were tested together.
 

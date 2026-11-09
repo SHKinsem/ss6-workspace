@@ -7,8 +7,11 @@ column as tests pass, with the date and any evidence.
 
 - First compiled on 2026-11-08 from a source inventory. Line references are in
   `repos/<pkg>/src/...` at that date.
-- Bench: two ZDT X42S motors (FW_Ver 105, HW 0x230A, ids 1 and 2) on the intermediate
-  board, 1 Mbit/s, 20 V, unloaded.
+- Bench: two ZDT X42S motors (HW 0x230A, ids 1 and 2) on the intermediate board,
+  1 Mbit/s, about 19 V (43 reads 19.1 and 19.3 V), unloaded and fixed. Firmware: id1
+  FW_Ver 105, id2 FW_Ver 107 (read 2026-11-09; earlier notes said 105 for both).
+- Both motors come out of power-up **enabled** (3A = 0x03). The start-up sweep disables
+  them, as designed.
 
 Risk classes:
 
@@ -64,6 +67,99 @@ R2 and above need the owner present and agreeing.
   - F3, F5 and FE with `expectReply=false` (Response=1);
   - closed loop ±10° at 150 mA;
   - 0x31 is true 16-bit.
+
+## Verified 2026-11-09 (over Wi-Fi, ss6-control)
+
+All tests ran through `POST /api/cmd`, `/api/log` and `/api/samples`, with no USB.
+
+- **R0, done except 0.3:**
+  - **0.1:** `1A` replies with 2 data bytes (id1 `00 04`, id2 `00 24`).
+  - **0.2:** 39 reads `00 1B` (+27 °C) on both motors, and the 43 temperature bytes agree
+    (`00 1B`).
+  - **0.4:** HW 0x230A (type 3) on both; FW 105 and 107.
+  - **0.5:** 13, 16, 20–24, 26, 27, 32–34, 37, 3B–3D, 3F, 41 and 49 all reply with the
+    lengths in `Codec::responseLength`. 21, 22 and 49 arrive as 3 frames and 42/43 as 5,
+    the same on both motors. **38 is not supported:** both motors answer `00 EE 6B`.
+  - **0.6:** 24, 26, 27, 32–34, 37, 39 and 3A–3D stream at 5 and 10 ms with intervals
+    within about 0.17 ms and no missing frames (`stream capture`). **A 38 stream is
+    acknowledged but sends nothing.**
+  - **0.7 (wire level, raw path):** under a 1 ms 36 stream, 8 of 8 multi-frame replies
+    (42 and 43) arrived as 5 contiguous frames: the motor finishes the reply before the
+    next sample. Driver reassembly under a stream is still untested.
+  - **0.8:** two 1 ms streams plus 40 raw reads over 10.6 s: 1000.4 frames/s per motor,
+    rx missed 0, overrun 0, arb lost 0.
+- **Bus errors:** TWAI `bus_error_count` rises with traffic, about 1 per 175 frames
+  (120 in 10.6 s at 2000 frames/s). It stays 0 when the bus is quiet, with arb lost 0.
+  One `txFailures` was seen during a 500 Hz control run. **Check the physical layer:**
+  termination (120 Ω at each end) and wiring.
+- **R1:**
+  - **1.1:** FE on a disabled motor: id1 answers `FE E2` (refused), and `9C` answers 02.
+    **id2 (FW 107) does not answer FE or 9C at all.**
+  - **1.2:** the motor does not range-check the F3 enable byte: `F3 AB 02 00` was accepted
+    (02) and **enabled** id1. The driver refuses values above 1, so only the raw path is
+    exposed.
+- **ss6-control on id1, 200 Hz, 150 mA, 20 rpm:** see "Control findings" below.
+
+## Verified 2026-11-09, afternoon: zdt_x::Motor on ss6::CanTask (ss6_motion firmware)
+
+- **Driver-side loops, current-capped:**
+  - `CD` (3 frames) and `C6` (2 frames) are the first multi-frame TX on hardware, with
+    0 TX failures.
+  - At a 20 mA cap a +10° move went 0.2°, so the cap holds.
+- **Both motors at 500 Hz, under Wi-Fi and HTTP polling every 50 ms:**
+  - The CAN task ran 8693 cycles: period 1.46–2.52 ms (mean 2.000), 0 late, work at most
+    1.15 ms.
+  - Feedback: about 8160 samples per motor, max gap 4 ms; 0 status misses, 0 TX failures.
+  - ±30° moves end within 0.02°. Velocity ±5 rpm measures +4.94 / −5.07 rpm (sd 0.3–0.5).
+  - `stop()` ends in a position hold.
+- **Response mode:** id2 (FW 107) has config `ResponseMode` 0 and answers no control
+  command, so FE, 9C and CD timed out. `Motor` reads 42 at start-up and does not wait for
+  replies on such a motor. id2's closed-loop current is 5000 mA (id1: 1600 mA), so
+  enable ends with a capped `CD` hold.
+- **Single-shot TX loses frames.** With TWAI single-shot (no retransmission), 6 TX
+  failures in 2.5 s next to two 500 Hz streams faulted id1 on missed status reads.
+  `CanTask` now enables ordinary retransmission.
+- **Termination:**
+  - Before the second resistor was soldered on: 685 bus errors in 17 s, about 1 per 24
+    frames.
+  - After it (CAN_H–CAN_L now 60 Ω): 76 in 17 s, about 1 per 220.
+  - With one 500 Hz stream: 13 in 10 s. With two: 34 in 10 s.
+  - TEC and REC stay 0, and retransmission absorbs the errors.
+  - The error type is not observable: the IDF ISR clears the error code capture register,
+    which reads 0. **Open:** scope the bus, or try other 1 Mbit/s bit timings (sample
+    point, SJW).
+
+## Control findings (2026-11-09, id1, unloaded)
+
+- **The old default gains (kp 50, kd 5) are far too high.** The owner found by hand that
+  kp 2 is already large, with ki and kd very small. The defaults are now kp 2, ki 0, kd 0.
+- **Static friction:** about 30 mA (forward) to 55–80 mA (backward) to break away.
+  **Kinetic friction:** about 45 mA forward and 55 mA backward, measured as the mean
+  current during a 5 deg/s ramp.
+- **Stick-slip.** The rotor creeps, sticks, then slips several degrees in 5–10 ms.
+  **The 20 rpm speed clamp drives it.** It zeroes the output at 20 rpm, the rotor stops
+  and springs back toward a detent (about −5 rpm), and then the output must break static
+  friction again. A position-dependent cogging table was not visible in this data: the
+  places where it stuck are irregular, not 1.8° apart.
+- **Speed estimate fix:** speeds are now computed from elapsed stream periods, not receipt
+  times. Before, a burst after an HTTP stall read 5× high: a 183 rpm "overspeed" while the
+  rotor moved under 2° in 50 ms.
+- **0x31 feedback** (16-bit, unwrapped, anchored to 36 at arming) holds within 0.01° and
+  agrees with 36.
+- **Results** (±30° at 5 deg/s, tracking error mean / sd / max, forward):
+
+  | Run | Error mean / sd / max (deg) |
+  | --- | --- |
+  | kp 2 ki 5 kd 0.5 | +3.2 / 4.1 / 12.6 |
+  | plus ff 45 mA | +0.7 / 2.7 / 6.3 (end error −5.5 → −0.2) |
+  | plus kd 2 | +0.9 / 2.5 / 6.5 (reverse peak 85.7 → 72.5 rpm) |
+  | at 500 Hz | sd 2.1–2.4, no real gain, and it ended in a `torque not acknowledged (TimedOut)` fault after one TX failure |
+
+- **Open:**
+  - make the speed clamp limit the output to the feed-forward level instead of zeroing
+    it (needs the owner's agreement);
+  - test the motor's own position loop with a current cap (CB/CD, multi-frame TX) as an
+    alternative for slow, smooth motion.
 
 ## Coverage matrix
 
@@ -132,7 +228,8 @@ Commands:
 ## Testable now vs needs firmware
 
 - **Testable now:**
-  - ss6-probe: `scan`, `read`, `watch`, `trace`, `bus`, `bitrate`.
+  - ss6-probe: `scan`, `read`, `watch`, `trace`, `bus`, `bitrate`. ss6-probe was retired
+    on 2026-11-09; these are to return as ss6-control debug commands.
   - ss6-control: `raw` (one frame of up to 8 bytes, any id including 0; it bypasses the
     driver), `stream`/`streamstats` (TWAI missed, overrun, bus-error and arb-lost
     deltas), `trace`, `bus`, `bitrate`.
@@ -247,3 +344,7 @@ Spare motor only. Use save=0 first, and power-cycle to revert.
 8. **Broadcast:** `expectReply` is ignored, and motor 1's reply to AA arrives as
    unsolicited and could match a new request (`Broadcast.cpp:231-245`).
 9. **Aux pins can never validate:** 3 and 46 are strapping pins (`Board.h:88,161`).
+10. **38 is treated as a timed-return info opcode (confirmed on hardware, 2026-11-09).**
+    `Codec::timedReturnInfoOpcode` accepts it, but FW 105 and 107 answer a 38 read with
+    `00 EE 6B`, and a 38 stream is acknowledged and then sends nothing. A caller gets
+    `ReplyObserved` for a stream that never produces samples.
