@@ -9,7 +9,7 @@ column as tests pass, with the date and any evidence.
   `repos/<pkg>/src/...` at that date.
 - Bench: two ZDT X42S motors (HW 0x230A, ids 1 and 2) on the intermediate board,
   1 Mbit/s, about 19 V (43 reads 19.1 and 19.3 V), unloaded and fixed. Firmware: id1
-  FW_Ver 105, id2 FW_Ver 107 (read 2026-11-09; earlier notes said 105 for both).
+  FW_Ver 207 (V2.0.7, upgraded 2026-11-09 from 105), id2 FW_Ver 107 (read 2026-11-09; earlier notes said 105 for both).
 - Both motors come out of power-up **enabled** (3A = 0x03). The start-up sweep disables
   them, as designed.
 
@@ -161,6 +161,27 @@ All tests ran through `POST /api/cmd`, `/api/log` and `/api/samples`, with no US
   - test the motor's own position loop with a current cap (CB/CD, multi-frame TX) as an
     alternative for slow, smooth motion.
 
+## Firmware upgrade (2026-11-09)
+
+Motor id1 was upgraded from FW 105 to FW 207 (V2.0.7) with ZDT's own tool,
+`Y42_IAP_260805.exe`, through the ESP32 board acting as a gs_usb USB-to-CAN bridge. It took
+40,231 data frames in about 10 minutes, with no TX failures and no bus-off. The motor kept its
+config. id2 is still FW 107. The tests above this section were run before the upgrade, on
+FW 105.
+
+- Protocol notes from the capture: `repos/zdt-x-driver/docs/firmware-upgrade.md`.
+- The bridge, its design and its hardware results: `repos/ss6-bsp/docs/usb-can-bridge.md`.
+
+V2.0.x changelog items that matter to us (vendor file `ZDT_X42S固件更新记录_260928.txt`):
+
+- V2.0.0: fast position F1/FC, and a fix for the multi-motor command ack.
+- V2.0.2: X firmware with acceleration 0 updates the speed immediately.
+- V2.0.3: fixes a motor hang when the CAN timed return runs at a high rate together with
+  high-frequency commands.
+- V2.0.5: much stiffer X firmware, with the `X_Stiff` menu.
+- V2.0.6: the screen shows the firmware type and version.
+
+Next step: a native ESP32 upgrade over Wi-Fi, so that no PC tool and no USB cable are needed.
 ## Coverage matrix
 
 ### ss6-bsp
