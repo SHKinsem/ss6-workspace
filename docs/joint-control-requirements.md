@@ -13,10 +13,14 @@ it take priority over the hardware coverage work.
 
 **Layering [owner, 2026-11-08]:**
 - Each application gets **its own repository**, which composes the generic libraries
-  built here: can-device-core, ss6-bsp, zdt-x-driver, pid-control, device-console,
-  wifi-setup, web-console, wifi-ota, and later a kinematics or trajectory library.
-- ss6-probe and ss6-control are demo and test applications. The joint robot is a
-  separate, future application repo.
+  built here: can-device-core, zdt-x-driver, dji-motor-driver, pid-control,
+  device-console, ss6-bsp, and later a kinematics or trajectory library.
+- ss6-control is the demo and test application. The joint robot is a separate, future
+  application repo.
+- **Consolidation [owner, 2026-11-09]:** the ESP32 board services (Wi-Fi setup, web
+  console, OTA) are part of ss6-bsp. ss6-probe is retired, and its diagnostics return as
+  ss6-control debug commands. Libraries stay separate only when they are
+  platform-free and host-tested.
 - **Mechanism specifics are application layer**: link dimensions, assembly mode, frames,
   gear ratio, joint limits and per-robot tuning. Libraries take these as parameters and
   must not hard-code any of them.

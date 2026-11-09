@@ -228,7 +228,8 @@ Commands:
 ## Testable now vs needs firmware
 
 - **Testable now:**
-  - ss6-probe: `scan`, `read`, `watch`, `trace`, `bus`, `bitrate`.
+  - ss6-probe: `scan`, `read`, `watch`, `trace`, `bus`, `bitrate`. ss6-probe was retired
+    on 2026-11-09; these are to return as ss6-control debug commands.
   - ss6-control: `raw` (one frame of up to 8 bytes, any id including 0; it bypasses the
     driver), `stream`/`streamstats` (TWAI missed, overrun, bus-error and arb-lost
     deltas), `trace`, `bus`, `bitrate`.
