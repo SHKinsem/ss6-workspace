@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Hong_Kong",
+  "hardware": "X42S HW 0x230A",
+  "bitrate": 1000000,
+  "runs": [
+    {
+      "address": 2,
+      "before_firmware": 107,
+      "image_firmware": 206,
+      "image_bytes": 160568,
+      "image_sha256": "c869bc59ee9a71665ab1adfa71bc494244b8e8c2be488fd0ced4be70b56bbdb2",
+      "frames": 40142,
+      "acknowledged": 40142,
+      "restarts": 1,
+      "capture_entries": 80329,
+      "capture_dropped": 0,
+      "capture_complete": true,
+      "payloads_match_source": true,
+      "bus_errors": 157,
+      "tx_failures": 0,
+      "rx_missed": 0,
+      "rx_overrun": 0,
+      "engine_result": "failed: post-upgrade verification timed out",
+      "outcome": "data complete; motor answered on CAN only after the owner reset its communication setting by hand; then Disabled/FW206"
+    },
+    {
+      "address": 2,
+      "before_firmware": 206,
+      "image_firmware": 207,
+      "image_bytes": 160923,
+      "image_sha256": "94de45ddf87ba3587887779196a85f8b124cbcba46a705a3edb0a92f9f9fc1a5",
+      "frames": 40231,
+      "acknowledged": 40231,
+      "restarts": 1,
+      "capture_entries": 80478,
+      "capture_dropped": 0,
+      "capture_complete": false,
+      "capture_downloaded_entries": 6400,
+      "engine_result": "succeeded",
+      "outcome": "FW207 and Disabled checked over CAN"
+    }
+  ],
+  "after_controller_reboot": {
+    "1": {
+      "firmware": 207,
+      "state": "Disabled",
+      "response_mode": 1,
+      "closed_loop_ma": 1600
+    },
+    "2": {
+      "firmware": 207,
+      "state": "Disabled",
+      "response_mode": 0,
+      "closed_loop_ma": 5000
+    }
+  },
+  "other_motor_untouched": "address 1 stayed Disabled/FW207 throughout",
+  "evidence_repository": "SHKinsem/ss6-control (private)",
+  "evidence_path": "evidence/iap-20261109-multi-motor/",
+  "limitations": [
+    "FW107 -> FW206 needed a manual communication-setting reset on the motor; cause not proven (V2.0.1 added P_Serial).",
+    "FW207 raw capture is partial (controller reboot cleared the buffer); its payloads were not compared in full.",
+    "FW201-FW205 are in the catalog but have not been flashed.",
+    "The page's P_Serial/CAN hint was added after these runs and is unchecked on the board; page checked in Edge only.",
+    "No power-loss, interrupted-transfer or bootloader-recovery test."
+  ]
+}

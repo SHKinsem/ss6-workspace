@@ -95,24 +95,30 @@ class Session:
         print(json.dumps(result), flush=True)
         if code >= 400: raise RuntimeError(result['message'])
 
-    def upload(self, path):
+    def upload(self, path, address):
         image = Path(path).read_bytes()
-        if len(image) != 160923: raise ValueError('wrong image size')
         digest = hashlib.sha256(image).hexdigest()
-        if digest != '94de45ddf87ba3587887779196a85f8b124cbcba46a705a3edb0a92f9f9fc1a5':
-            raise ValueError('not the verified vendor image SHA256')
+        catalog = self.get('/api/iap')
+        if address not in catalog['addresses']: raise ValueError('address is not configured on this board')
+        if not any(i['bytes'] == len(image) and i['sha256'] == digest for i in catalog['images']):
+            raise ValueError('image is not in the board full-SHA256 catalog')
         boundary = 'SS6NativeIapAcceptanceUpload'
-        body = (f'--{boundary}\r\nContent-Disposition: form-data; name="firmware"; filename="X42S_FW207.bin"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode()
+        body = (f'--{boundary}\r\nContent-Disposition: form-data; name="firmware"; filename="vendor.bin"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode()
                 + image + f'\r\n--{boundary}--\r\n'.encode())
-        code, raw, _ = self.request('/api/iap/image', body, {'X-IAP-Token':self.token, 'X-IAP-CRC32':f'{zlib.crc32(image):08x}', 'Content-Type':f'multipart/form-data; boundary={boundary}'}, 30)
-        result = {'time':stamp(), 'bytes':len(image), 'sha256':digest, 'code':code, 'message':raw.decode(errors='replace')}
+        code, raw, _ = self.request('/api/iap/image', body, {'X-IAP-Token':self.token, 'X-IAP-Address':str(address), 'X-IAP-CRC32':f'{zlib.crc32(image):08x}', 'Content-Type':f'multipart/form-data; boundary={boundary}'}, 30)
+        result = {'time':stamp(), 'address':address, 'bytes':len(image), 'sha256':digest, 'code':code, 'message':raw.decode(errors='replace')}
         self.save('upload.json', result); print(json.dumps(result), flush=True)
         if code != 200: raise RuntimeError(result['message'])
         status = self.get('/api/iap'); self.save('staged.json', status)
-        if not status['ready'] or status['sha256'] != digest: raise RuntimeError('board image hash mismatch')
+        if not status['ready'] or status['sha256'] != digest or status['address'] != address: raise RuntimeError('board image hash mismatch')
 
-    def run(self, recovery):
-        self.post('start', {'confirm':'id1-fw207', 'recovery':'1' if recovery else '0'})
+    def run(self, recovery, address, path):
+        digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        staged = self.get('/api/iap')
+        if not staged['ready'] or staged['address'] != address or staged['sha256'] != digest:
+            raise ValueError('staged target/image differs from explicitly requested address/image')
+        self.save('before-start-iap.json', staged)
+        self.post('start', {'confirm':f'{address}:{digest}', 'recovery':'1' if recovery else '0'})
         start = time.monotonic(); last_print = -10; failures = 0
         with (self.out / 'progress.jsonl').open('a', encoding='utf-8') as log:
             while time.monotonic() - start < 950:
@@ -149,14 +155,15 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('action', choices=['discover','snapshot','upload','run','capture','release'])
     p.add_argument('--host'); p.add_argument('--out', default='logs/iap-acceptance')
-    p.add_argument('--image'); p.add_argument('--label', default='snapshot'); p.add_argument('--recovery', action='store_true')
+    p.add_argument('--address', type=int); p.add_argument('--image'); p.add_argument('--label', default='snapshot'); p.add_argument('--recovery', action='store_true')
     a = p.parse_args()
     if a.action == 'discover': discover()
     else:
         if not a.host: p.error('--host required')
+        if a.action in ('upload', 'run') and (not a.image or a.address is None): p.error('--image and --address required')
         s = Session(a.host,a.out)
         if a.action == 'snapshot': s.snapshot(a.label)
-        elif a.action == 'upload': s.upload(a.image)
-        elif a.action == 'run': raise SystemExit(0 if s.run(a.recovery) else 1)
+        elif a.action == 'upload': s.upload(a.image,a.address)
+        elif a.action == 'run': raise SystemExit(0 if s.run(a.recovery,a.address,a.image) else 1)
         elif a.action == 'capture': s.capture()
         elif a.action == 'release': s.post('release')

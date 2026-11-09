@@ -32,7 +32,10 @@ safety policy, persistence and network interfaces.
 ## Status
 
 Native Wi-Fi motor firmware upgrade: the address-1 X42S FW207 checkpoint passed a
-real 87-second run on 2026-11-09. The owner requested completion as a supported feature;
+real 87-second run on 2026-11-09. Later that day the multi-address / multi-image version
+(address 1–6, X42S V2.0.1–V2.0.7 by full SHA256) took address 2 from FW107 through FW206
+to FW207, leaving address 1 untouched. The first step needed a manual communication-setting
+fix on the motor. The owner requested completion as a supported feature;
 see [checkpoint, limitations and completion checklist](docs/native-iap-roadmap.md).
 Exact tested revisions and evidence are recorded there; this checkpoint's feature
 commits are not yet reflected in the main-only submodule pointers.

@@ -166,11 +166,15 @@ All tests ran through `POST /api/cmd`, `/api/log` and `/api/samples`, with no US
 Motor id1 was upgraded from FW 105 to FW 207 (V2.0.7) with ZDT's own tool,
 `Y42_IAP_260805.exe`, through the ESP32 board acting as a gs_usb USB-to-CAN bridge. It took
 40,231 data frames in about 10 minutes, with no TX failures and no bus-off. The motor kept its
-config. id2 is still FW 107. The tests above this section were run before the upgrade, on
-FW 105.
+config. id2 was then FW 107 (it went to FW 207 over native IAP later the same day, see
+below). The tests above this section were run before the upgrade, on FW 105.
 
 - Protocol notes from the capture: `repos/zdt-x-driver/docs/firmware-upgrade.md`.
 - The bridge, its design and its hardware results: `repos/ss6-bsp/docs/usb-can-bridge.md`.
+
+Deferred, not started: keeping the bridge in a factory partition and switching modes with
+a command instead of a reflash. Tracked in
+[ss6-control#7](https://github.com/SHKinsem/ss6-control/issues/7).
 
 V2.0.x changelog items that matter to us (vendor file `ZDT_X42S固件更新记录_260928.txt`):
 
@@ -216,8 +220,53 @@ upload, rejection-test and deployment records; raw CSV is gzip-compressed in Git
 AP password text is redacted. The public workspace contains only a sanitized summary
 under `docs/evidence/iap-20261109-native/`, not raw firmware-bearing capture frames.
 The host helper is `tools/iap_acceptance.py`; capture download is only allowed after
-an attempt ends. First release remains restricted to this address/hardware/image;
-power-loss and deliberate bootloader recovery are not yet separately accepted.
+an attempt ends. Power-loss and deliberate bootloader recovery are not yet
+separately accepted.
+
+### Native Wi-Fi IAP on address 2, FW107 -> FW206 -> FW207, 2026-11-09 23:25–23:51 HKT
+
+Owner-approved runs, with the multi-address / multi-image code: ss6-control `/iap`
+(address selection, full-SHA256 catalog of X42S default-X V2.0.1–V2.0.7). The firmware
+went to the board over USB with esptool, flash hash checked. Before the runs: id1
+Disabled/FW207, id2 Disabled/FW107.
+
+1. **FW107 -> FW206: data complete, automatic check failed.** Image 160,568 bytes,
+   SHA256 `c869bc59ee9a71665ab1adfa71bc494244b8e8c2be488fd0ced4be70b56bbdb2`.
+   All 40,142 frames ACKed on `0x2DD`, with the count field `9C CE` = 40,142 (so it is
+   the frame count, not a constant). One restart. Captured 80,329 entries, 0 dropped;
+   all payloads match the image. 157 recoverable bus errors, 0 TX failures, 0 RX loss.
+   After the reboot the motor did not answer on CAN: the post-upgrade check timed out
+   and id2 read Offline after release. The owner then reset the communication setting
+   on the motor itself, and the next startup read id2 Disabled/FW206, response mode 0,
+   closed-loop 5000 mA. V2.0.1 added the P_Serial selection, so V1.x -> V2.x likely
+   resets it; that is a likely cause, not a proven one. This run is a successful
+   transfer that needed a manual fix, not an automatic success.
+2. **FW206 -> FW207: succeeded.** Image 160,923 bytes, SHA256
+   `94de45ddf87ba3587887779196a85f8b124cbcba46a705a3edb0a92f9f9fc1a5`. 40,231 frames
+   ACKed, one restart, 80,478 entries captured, 0 dropped; FW207 and Disabled checked
+   over CAN by the engine. HTTP polling dropped out at times, so the poll timestamps do
+   not measure the transfer time.
+3. **After the owner rebooted the controller (2026-11-10 00:04):** id1 Disabled/FW207,
+   response mode 1, 1600 mA; id2 Disabled/FW207, response mode 0, 5000 mA. IAP idle and
+   unlocked. id1 was untouched by both runs, so address targeting works.
+
+Not covered:
+
+- Only 6,400 of the 80,478 FW207 capture entries were downloaded before the network
+  dropped; the controller reboot cleared the rest. FW207's payloads were not compared
+  in full. FW206 has a complete capture.
+- FW201–FW205 have not been flashed. Being in the catalog is not acceptance.
+- Wi-Fi was unreliable during the session (HTTP timeouts while serial reported the
+  station connected). Not diagnosed.
+- The page's hint about P_Serial/CAN, shown when every frame was ACKed but the check
+  failed, was added after these runs. It has not been checked on the board, nor has
+  the page in Chrome (Edge only).
+- No power-loss, interrupted-transfer or bootloader-recovery test.
+
+Evidence: private ss6-control `evidence/iap-20261109-multi-motor/` (deployment,
+per-run status/console snapshots, progress, results, gzip raw captures). Public
+summary: `docs/evidence/iap-20261109-multi-motor/acceptance-summary.json`.
+
 ## Coverage matrix
 
 ### ss6-bsp

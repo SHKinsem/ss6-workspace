@@ -29,7 +29,7 @@ must be verified before broadening supported hardware, addresses or firmware fil
   (raw CSV gzip-compressed). This public workspace publishes only a sanitized summary
   under `docs/evidence/iap-20261109-native/`.
 
-## Current limits (do not present this as general support yet)
+## Limits of the first checkpoint (address and image limits now lifted, see below)
 
 - Only address 1, 1 Mbit/s, HW0x230A, fixed-6B application replies, the captured
   160,923-byte X42S FW207 file and expected version 207.
@@ -48,19 +48,51 @@ must be verified before broadening supported hardware, addresses or firmware fil
 - Device OTA password is reused. Finish product-facing authentication/authorization
   policy rather than relying on a development default or putting credentials in logs.
 
+## Multi-address / multi-image (2026-11-09)
+
+Code (zdt-x-driver `Iap`, ss6-control `MotorIap`, `IapCatalog.h`, `/iap`):
+
+- The engine takes the address, expected firmware and hardware as constructor
+  arguments. It derives the frame count from the size (`(bytes + 3) / 4`, at most
+  65,535 frames), pads the last frame with FF, and accepts only ACKs from the target
+  address with the matching count and sequence.
+- The board takes a configured address (1–6) with the upload and identifies the image
+  by exact size and full SHA256 against seven X42S default-X images, V2.0.1–V2.0.7,
+  hardware 0x230A only. V1.x, Emm, other models and changed files are refused before
+  any CAN frame. Start must confirm `<address>:<sha256>`; the old `id1-fw207` is
+  rejected. The target cannot change during a maintenance session.
+- The page has address selection, target version and hash, dynamic progress, and a
+  P_Serial/CAN hint when every frame was ACKed but the post-upgrade check failed.
+- `tools/iap_acceptance.py` needs `--address` and `--image` for `upload` and `run`, and
+  checks the staged image again before sending start.
+- Static analysis of the vendor tool (driver `docs/firmware-upgrade.md`) gives the
+  count and identifier formulas; the bench runs below confirm them on address 2.
+
+Bench (details and limits in `hardware-coverage.md`):
+
+- Address 2 FW107 -> FW206: all 40,142 frames ACKed, payloads match. The automatic
+  check failed until the owner reset the motor's communication setting by hand.
+- Address 2 FW206 -> FW207: succeeded, checked over CAN.
+- Address 1 stayed Disabled/FW207 throughout.
+
+Tests: all host tests and the motor demo pass (`tools/test_all.py`, simulation only),
+plus `ss6-control/tests/test_iap_catalog.cpp`; `ss6_intermediate` builds.
+
 ## Completion checklist, in recommended order
 
 ### 1. Establish a supported-image/protocol contract
 
-- [ ] Resolve the first two payload bytes against another vendor image/capture.
-- [ ] Verify address 2 targeting on an explicitly approved bench run; prove id1 is
+- [x] Resolve the first two payload bytes against another vendor image/capture.
+  They are the frame count: `9C CE` = 40,142 for the FW206 image.
+- [x] Verify address 2 targeting on an explicitly approved bench run; prove id1 is
   unaffected. Never infer broadcast upgrades from the current capture.
-- [ ] Define metadata: family, compatible hardware, firmware type/version, byte size,
+- [x] Define metadata: family, compatible hardware, firmware type/version, byte size,
   full SHA256, source/provenance and permitted upgrade/recovery paths.
-- [ ] Parameterize addressing, frame count, padding and expected post-upgrade version
+- [x] Parameterize addressing, frame count, padding and expected post-upgrade version
   only after evidence. Bound image sizes, counters and sequence overflow explicitly.
-- [ ] Reject mismatched/corrupt/unsupported images on the board before any flash frame;
+- [x] Reject mismatched/corrupt/unsupported images on the board before any flash frame;
   do not treat a filename, prefix or caller-provided CRC as vendor authenticity.
+  (Full-SHA256 catalog; host-tested, not yet tried on the board with a bad image.)
 
 ### 2. Finish lifecycle and recovery behavior
 
@@ -77,6 +109,9 @@ must be verified before broadening supported hardware, addresses or firmware fil
   rejected/failed path preserves exclusive bus ownership and the intended control lock.
 - [ ] Define recovery checks when normal hardware/version reads are unavailable.
   An offline motor is not automatically a compatible bootloader.
+- [ ] V1.x -> V2.x: the motor stopped answering on CAN after FW107 -> FW206 until its
+  communication setting was reset by hand. Find out what changed and whether the board
+  can detect it; never reflash automatically in that state.
 
 ### 3. Complete the user interface
 
@@ -107,7 +142,9 @@ must be verified before broadening supported hardware, addresses or firmware fil
 
 ## Reproducing this checkpoint
 
-Exact package commits and branch names are recorded in `docs/evidence/iap-20261109-native/source-checkpoint.json`.
+Exact package commits and branch names are recorded in `docs/evidence/iap-20261109-native/source-checkpoint.json`
+(address 1 checkpoint) and `docs/evidence/iap-20261109-multi-motor/source-checkpoint.json`
+(multi-address / multi-image, current).
 The workspace gitlinks intentionally stay on already-merged commits until the feature
 branches are merged, as required by the workspace workflow. For this checkpoint,
 check out the manifest's driver, BSP and application revisions before building;
