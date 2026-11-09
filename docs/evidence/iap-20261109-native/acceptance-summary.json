@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Hong_Kong",
+  "result": "succeeded",
+  "elapsed_seconds": 86.961,
+  "data_phase_seconds": 85.334018,
+  "target": {
+    "address": 1,
+    "hardware": "0x230A",
+    "before_firmware": 207,
+    "after_firmware": 207,
+    "final_state": "Disabled"
+  },
+  "other_motor": {
+    "address": 2,
+    "firmware": 107,
+    "final_state": "Disabled"
+  },
+  "image_sha256": "94de45ddf87ba3587887779196a85f8b124cbcba46a705a3edb0a92f9f9fc1a5",
+  "distinct_data_frames": 40231,
+  "restarts": 1,
+  "capture_entries": 80479,
+  "capture_dropped": 0,
+  "tx_failures": 0,
+  "rx_missed": 0,
+  "rx_overrun": 0,
+  "bus_errors": 131,
+  "payloads_match_source": true,
+  "capture_sha256": "c2d2b7df6018a3685ba36c46ad92884a53300a71b28a69a0ef41ce30155e95a5",
+  "evidence_repository": "SHKinsem/ss6-control (private)",
+  "evidence_path": "evidence/iap-20261109-native/",
+  "limitations": [
+    "Same-version reinstall; not a distinct-version upgrade.",
+    "Only response mode and closed-loop current compared, not entire config/position.",
+    "Chromium Edge rendering checked; Chrome-specific interaction not checked.",
+    "Bus errors remain unresolved; no power-loss/recovery acceptance yet."
+  ]
+}

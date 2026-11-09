@@ -181,7 +181,43 @@ V2.0.x changelog items that matter to us (vendor file `ZDT_X42S固件更新记�
 - V2.0.5: much stiffer X firmware, with the `X_Stiff` menu.
 - V2.0.6: the screen shows the firmware type and version.
 
-Next step: a native ESP32 upgrade over Wi-Fi, so that no PC tool and no USB cable are needed.
+### Native Wi-Fi IAP verified, 2026-11-09 21:50–21:52 HKT
+
+Owner-approved native run: ESP32 `/iap`, address 1, 1 Mbit/s,
+X42S HW0x230A, reinstalled FW207 using the same vendor image. id2 was not upgraded.
+
+- Image: 160,923 bytes, SHA256
+  `94de45ddf87ba3587887779196a85f8b124cbcba46a705a3edb0a92f9f9fc1a5`.
+- **Succeeded in 86.961 s** as observed by HTTP polling; data phase 85.334018 s.
+  40,231 distinct frames, 40,235 TX submissions, 40,234 data ACKs. One restart
+  after sequence 3 was not acknowledged, consistent with the earlier PC-tool run.
+- Captured **80,479 entries, 0 dropped**. All data payloads, including final FF
+  padding, match the vendor file byte-for-byte. TX records are software queue
+  submissions, not electrical wire timestamps; RX times are CAN-task observations.
+- Final wire replies: `F3 02 6B`, `3A 02 6B` (disabled),
+  `1F 00 CF 23 0A 6B` (FW207/HW0x230A).
+- 0 TX failures, 0 RX missed/overruns, TEC/REC 0; **131 bus errors** were counted
+  and absorbed by retransmission. This does not resolve the physical-layer issue.
+  The error-code sampler cannot identify their true type (ISR clears ECC).
+- After release and fresh startup reads: id1 Disabled, FW207, response mode 1,
+  closed-loop 1600 mA; id2 Disabled, FW107, response mode 0, closed-loop 5000 mA.
+  These observed config fields are unchanged; a complete 32-byte config or position
+  preservation comparison was not performed.
+- Live rejection checks: unauthenticated start 401; truncated image 400; no IAP
+  frames sent. Full image upload hash matched the source before starting.
+- Real board page visually verified in Edge (Chromium): progressing at 20.9%, then
+  successful at 100%. Chrome-specific validation remains unperformed. A stale
+  upload-only message found in this check was removed from active/result display.
+
+Evidence: local workspace `logs/iap-20261109-native/`, archived in the private
+ss6-control repository under `evidence/iap-20261109-native/` (`result.json`, `progress.jsonl`,
+`can-capture.csv`, `capture-analysis.json`, pre/post console and status snapshots,
+upload, rejection-test and deployment records; raw CSV is gzip-compressed in Git).
+AP password text is redacted. The public workspace contains only a sanitized summary
+under `docs/evidence/iap-20261109-native/`, not raw firmware-bearing capture frames.
+The host helper is `tools/iap_acceptance.py`; capture download is only allowed after
+an attempt ends. First release remains restricted to this address/hardware/image;
+power-loss and deliberate bootloader recovery are not yet separately accepted.
 ## Coverage matrix
 
 ### ss6-bsp

@@ -31,6 +31,12 @@ safety policy, persistence and network interfaces.
 
 ## Status
 
+Native Wi-Fi motor firmware upgrade: the address-1 X42S FW207 checkpoint passed a
+real 87-second run on 2026-11-09. The owner requested completion as a supported feature;
+see [checkpoint, limitations and completion checklist](docs/native-iap-roadmap.md).
+Exact tested revisions and evidence are recorded there; this checkpoint's feature
+commits are not yet reflected in the main-only submodule pointers.
+
 | Item | State |
 | --- | --- |
 | [zdt-x-driver#1](https://github.com/SHKinsem/zdt-x-driver/pull/1), [ss6-bsp#1](https://github.com/SHKinsem/ss6-bsp/pull/1) | Merged: X-firmware family support; modular TWAI adapter and motor demo |
