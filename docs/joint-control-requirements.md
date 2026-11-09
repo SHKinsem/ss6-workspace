@@ -31,6 +31,35 @@ guarantee three things. The guiding idea is "as brainless as Arduino".
 3. **Debugging is powerful through composition.** There are as few and as simple console
    commands as possible, and combining them gives the stronger functions.
 
+**Object layers and names [owner, 2026-11-09]:** each layer has its own units, and
+"axis" is never a motor.
+
+| Layer | Name | Units | Owns | Lives in |
+| --- | --- | --- | --- | --- |
+| Motor | `zdt_x::Motor` | motor shaft deg, rpm, mA | one ZDT motor: enable, position and velocity commands, feedback, current cap, faults; hides tickets, phases, streams and response mode | zdt-x-driver |
+| Joint | `Joint` | joint deg, rpm, N·m | motor × ratio, direction, zero offset, soft limits | generic library; parameters from the application |
+| Linkage | `Linkage` | mm | two joints ↔ end effector (x, y): IK, FK, Jacobian, workspace and singularity checks | kinematics library (P2a) |
+| Task space | axes x, y | mm, mm/s | trajectories and interpolation | kinematics or trajectory library |
+
+- In a parallel linkage, one motion along x moves both motors. Only the Linkage layer
+  knows this.
+- "Actuator" is not used. In robotics it means motor plus gearbox, which is the Joint
+  layer here. The ratio is a mechanism parameter, so it stays out of the ZDT driver.
+- The existing protocol-level `zdt_x::Motor` (tickets, phases, replies) is renamed
+  `zdt_x::Endpoint`. The application-facing object takes the plain name. This is a
+  breaking change. Babytech is out of scope **[owner]**: its code was never flashed or
+  verified, so it does not constrain the API.
+- **Placement [owner, 2026-11-09]:** ZDT-specific behaviour belongs in zdt-x-driver, not in
+  a new package. That covers enable confirmation, the config read and response mode, the
+  feedback stream and its anchoring, current-capped commands, the status watchdog and
+  verified stream-off. Other parts go elsewhere:
+  - the motor-agnostic real-time CAN task (TWAI plus bus, on core 1) goes in ss6-bsp;
+  - generic composable console primitives go in device-console;
+  - ZDT console commands are an optional module of zdt-x-driver;
+  - safety policy, such as who renews the lease, stays in the application.
+- **Not now:** a brand-independent motor interface shared by ZDT and DJI. Extract it only
+  when an application uses both.
+
 Each statement is tagged with where it comes from:
 
 - **[owner]**: stated by the project owner. Treat it as a requirement.

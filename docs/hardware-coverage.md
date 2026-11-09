@@ -100,6 +100,35 @@ All tests ran through `POST /api/cmd`, `/api/log` and `/api/samples`, with no US
     exposed.
 - **ss6-control on id1, 200 Hz, 150 mA, 20 rpm:** see "Control findings" below.
 
+## Verified 2026-11-09, afternoon: zdt_x::Motor on ss6::CanTask (ss6_motion firmware)
+
+- **Driver-side loops, current-capped:**
+  - `CD` (3 frames) and `C6` (2 frames) are the first multi-frame TX on hardware, with
+    0 TX failures.
+  - At a 20 mA cap a +10° move went 0.2°, so the cap holds.
+- **Both motors at 500 Hz, under Wi-Fi and HTTP polling every 50 ms:**
+  - The CAN task ran 8693 cycles: period 1.46–2.52 ms (mean 2.000), 0 late, work at most
+    1.15 ms.
+  - Feedback: about 8160 samples per motor, max gap 4 ms; 0 status misses, 0 TX failures.
+  - ±30° moves end within 0.02°. Velocity ±5 rpm measures +4.94 / −5.07 rpm (sd 0.3–0.5).
+  - `stop()` ends in a position hold.
+- **Response mode:** id2 (FW 107) has config `ResponseMode` 0 and answers no control
+  command, so FE, 9C and CD timed out. `Motor` reads 42 at start-up and does not wait for
+  replies on such a motor. id2's closed-loop current is 5000 mA (id1: 1600 mA), so
+  enable ends with a capped `CD` hold.
+- **Single-shot TX loses frames.** With TWAI single-shot (no retransmission), 6 TX
+  failures in 2.5 s next to two 500 Hz streams faulted id1 on missed status reads.
+  `CanTask` now enables ordinary retransmission.
+- **Termination:**
+  - Before the second resistor was soldered on: 685 bus errors in 17 s, about 1 per 24
+    frames.
+  - After it (CAN_H–CAN_L now 60 Ω): 76 in 17 s, about 1 per 220.
+  - With one 500 Hz stream: 13 in 10 s. With two: 34 in 10 s.
+  - TEC and REC stay 0, and retransmission absorbs the errors.
+  - The error type is not observable: the IDF ISR clears the error code capture register,
+    which reads 0. **Open:** scope the bus, or try other 1 Mbit/s bit timings (sample
+    point, SJW).
+
 ## Control findings (2026-11-09, id1, unloaded)
 
 - **The old default gains (kp 50, kd 5) are far too high.** The owner found by hand that
