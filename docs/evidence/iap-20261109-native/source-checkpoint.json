@@ -1,0 +1,56 @@
+{
+  "recorded_date": "2026-11-09",
+  "timezone": "Asia/Hong_Kong",
+  "checkpoint_branch": "codex/native-wifi-iap-checkpoint",
+  "packages": {
+    "can-device-core": {
+      "commit": "90f5926df97a197389d4f1ea8161db52e874e256",
+      "branch": "main",
+      "remote": "https://github.com/SHKinsem/can-device-core.git",
+      "remote_branches_containing_commit": [
+        "origin/HEAD -> origin/main",
+        "  origin/main"
+      ]
+    },
+    "device-console": {
+      "commit": "4bd6d1b0bd432a11e0d68be9304dcf7c33cbead0",
+      "branch": "main",
+      "remote": "https://github.com/SHKinsem/device-console.git",
+      "remote_branches_containing_commit": [
+        "origin/main"
+      ]
+    },
+    "zdt-x-driver": {
+      "commit": "e37986230c14bcb90fb67c1d6cabd6b5c87eafa2",
+      "branch": "codex/native-wifi-iap-checkpoint",
+      "remote": "https://github.com/SHKinsem/zdt-x-driver.git",
+      "remote_branches_containing_commit": [
+        "origin/codex/native-wifi-iap-checkpoint"
+      ]
+    },
+    "ss6-bsp": {
+      "commit": "ebc5d88026c28d2deda9bb52f55646a699ba6590",
+      "branch": "feature/usb-can-bridge",
+      "remote": "https://github.com/SHKinsem/ss6-bsp.git",
+      "remote_branches_containing_commit": [
+        "origin/feature/usb-can-bridge"
+      ]
+    },
+    "ss6-control": {
+      "commit": "46d37b261a8c0c708c23ee99257839c47c075162",
+      "branch": "codex/native-wifi-iap-checkpoint",
+      "remote": "https://github.com/SHKinsem/ss6-control.git",
+      "remote_branches_containing_commit": [
+        "origin/codex/native-wifi-iap-checkpoint"
+      ]
+    }
+  },
+  "validation": [
+    "21 CTest tests and simulation demo passed",
+    "ss6_intermediate PlatformIO build passed",
+    "id1 FW207 reinstall successful, 86.961 s, complete frame evidence"
+  ],
+  "workspace_gitlinks": "Intentionally unchanged until dependency feature commits are merged to main; use these package revisions to reproduce this checkpoint.",
+  "private_evidence": "SHKinsem/ss6-control/evidence/iap-20261109-native/",
+  "public_summary": "docs/evidence/iap-20261109-native/acceptance-summary.json"
+}

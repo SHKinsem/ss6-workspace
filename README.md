@@ -31,12 +31,22 @@ safety policy, persistence and network interfaces.
 
 ## Status
 
+Native Wi-Fi motor firmware upgrade: the address-1 X42S FW207 checkpoint passed a
+real 87-second run on 2026-11-09. Later that day the multi-address / multi-image version
+(address 1–6, X42S V2.0.1–V2.0.7 by full SHA256) took address 2 from FW107 through FW206
+to FW207, leaving address 1 untouched. The first step needed a manual communication-setting
+fix on the motor. The owner requested completion as a supported feature;
+see [checkpoint, limitations and completion checklist](docs/native-iap-roadmap.md).
+Exact tested revisions and evidence are recorded there. It is merged into every package's
+`main`, and the submodule pointers here include it (2026-11-10).
+
 | Item | State |
 | --- | --- |
 | [zdt-x-driver#1](https://github.com/SHKinsem/zdt-x-driver/pull/1), [ss6-bsp#1](https://github.com/SHKinsem/ss6-bsp/pull/1) | Merged: X-firmware family support; modular TWAI adapter and motor demo |
 | [ss6-bsp#3](https://github.com/SHKinsem/ss6-bsp/pull/3), [zdt-x-driver#2](https://github.com/SHKinsem/zdt-x-driver/pull/2), [device-console#1](https://github.com/SHKinsem/device-console/pull/1), [web-console#1](https://github.com/SHKinsem/web-console/pull/1) and [#2](https://github.com/SHKinsem/web-console/pull/2), [ss6-probe#1](https://github.com/SHKinsem/ss6-probe/pull/1) and [#2](https://github.com/SHKinsem/ss6-probe/pull/2), [ss6-control#1](https://github.com/SHKinsem/ss6-control/pull/1) and [#2](https://github.com/SHKinsem/ss6-control/pull/2) | Merged (2026-11-08). They cover: motor ids by U-shaped slot; control commands without replies; quiet commands; a page served from LittleFS and uploadable without a reflash; probe OTA and the run-time bitrate; control live charts, stream diagnostics, a start-up sweep (verified stream-off plus disabling motors found enabled) and a log-duplication fix. Every package in this repository is pinned to its `main` |
-| [zdt-x-driver#3](https://github.com/SHKinsem/zdt-x-driver/pull/3), [ss6-bsp#4](https://github.com/SHKinsem/ss6-bsp/pull/4), [ss6-control#5](https://github.com/SHKinsem/ss6-control/pull/5) | Open (2026-11-09), merge in that order: `zdt_x::Motor` and `Endpoint`, `ss6::CanTask` and the folded-in board services, and ss6-control on the new API without the torque controller. The submodule pointers here are bumped after they merge. Tracking issues: [ss6-control#3](https://github.com/SHKinsem/ss6-control/issues/3) (torque control, paused) and [#4](https://github.com/SHKinsem/ss6-control/issues/4) (the probe diagnostics as debug commands) |
-| Host tests | All 20 CTest tests and the motor demo pass. ss6-control builds with PlatformIO |
+| [zdt-x-driver#3](https://github.com/SHKinsem/zdt-x-driver/pull/3), [ss6-bsp#4](https://github.com/SHKinsem/ss6-bsp/pull/4), [ss6-control#5](https://github.com/SHKinsem/ss6-control/pull/5) | Merged (2026-11-09): `zdt_x::Motor` and `Endpoint`, `ss6::CanTask` and the folded-in board services, and ss6-control on the new API without the torque controller. Tracking issues: [ss6-control#3](https://github.com/SHKinsem/ss6-control/issues/3) (torque control, paused) and [#4](https://github.com/SHKinsem/ss6-control/issues/4) (the probe diagnostics as debug commands) |
+| [zdt-x-driver#4](https://github.com/SHKinsem/zdt-x-driver/pull/4) and [#5](https://github.com/SHKinsem/zdt-x-driver/pull/5), [ss6-bsp#5](https://github.com/SHKinsem/ss6-bsp/pull/5), [ss6-control#6](https://github.com/SHKinsem/ss6-control/pull/6) and [#8](https://github.com/SHKinsem/ss6-control/pull/8) | Merged (2026-11-10): the IAP protocol docs and the `zdt_x::Iap` engine; the gs_usb USB-to-CAN bridge (`ss6_usbcan`); the Wi-Fi motor firmware upgrade at `/iap`. Every package in this repository is pinned to its `main` |
+| Host tests | All host tests and the motor demo pass (`tools/test_all.py`). ss6-control builds with PlatformIO (`ss6_intermediate`, `ss6_usbcan`) |
 | Hardware | Bench-tested on the intermediate board with two X42S (FW_Ver 105, addresses 1 and 2) at 1 Mbit/s, unloaded: reads, timed-return streams at 1–10 ms (one per motor; 0x31 is true 16-bit), Wi-Fi, OTA and the page upload; ss6-control closed loop ±10° at 150 mA. What is and is not proven, and the test plan, are in [docs/hardware-coverage.md](docs/hardware-coverage.md) |
 | Babytech `feature/astra-ss6-migration-20261020` | Still pinned to the pre-PR zdt-x-driver. Rebuild it against the merged driver before it switches |
 

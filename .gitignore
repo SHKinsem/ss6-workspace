@@ -1,3 +1,6 @@
 build/
 __pycache__/
 .claude/
+# Local hardware evidence can contain network details and vendor firmware payloads.
+# Publish only sanitized summaries here; full IAP captures live in private ss6-control.
+/logs/
