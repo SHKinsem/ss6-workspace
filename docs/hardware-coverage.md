@@ -257,7 +257,13 @@ Not covered:
   in full. FW206 has a complete capture.
 - FW201–FW205 have not been flashed. Being in the catalog is not acceptance.
 - Wi-Fi was unreliable during the session (HTTP timeouts while serial reported the
-  station connected). Not diagnosed.
+  station connected). Not diagnosed. A likely cause was found on 2026-11-10: on an SSID
+  served by several access points, the Arduino fast scan joined the first access point
+  on channel 1. The board then reported "connected" at an address the laptop could not
+  ping, and old and new firmware alike showed this. Joining the strongest access point
+  fixed it on the bench ([ss6-bsp#6](https://github.com/SHKinsem/ss6-bsp/pull/6)). That
+  network was a different one, so this does not prove the 11-09 timeouts had the same
+  cause.
 - The page's hint about P_Serial/CAN, shown when every frame was ACKed but the check
   failed, was added after these runs. It has not been checked on the board, nor has
   the page in Chrome (Edge only).

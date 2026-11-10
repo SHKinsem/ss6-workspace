@@ -6,7 +6,7 @@ project(ss6_workspace LANGUAGES CXX)
 include(CTest)
 
 set(SS6_REPOS "${CMAKE_CURRENT_SOURCE_DIR}/repos")
-foreach(package can-device-core zdt-x-driver dji-motor-driver device-console pid-control)
+foreach(package can-device-core zdt-x-driver dji-motor-driver device-console pid-control ss6-tcode)
   if(NOT EXISTS "${SS6_REPOS}/${package}/CMakeLists.txt")
     message(FATAL_ERROR "repos/${package} is missing; run: git submodule update --init")
   endif()
@@ -19,6 +19,7 @@ add_subdirectory("${SS6_REPOS}/dji-motor-driver" dji-motor-driver)
 # ss6-control firmware) is built with PlatformIO in repos/ss6-control.
 add_subdirectory("${SS6_REPOS}/device-console" device-console)
 add_subdirectory("${SS6_REPOS}/pid-control" pid-control)
+add_subdirectory("${SS6_REPOS}/ss6-tcode" ss6-tcode)
 
 # ss6-bsp finds the drivers through these cache paths when its demo is enabled.
 set(CAN_DEVICE_CORE_DIR "${SS6_REPOS}/can-device-core" CACHE PATH "" FORCE)

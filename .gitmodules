@@ -19,3 +19,6 @@
 [submodule "repos/ss6-control"]
 	path = repos/ss6-control
 	url = https://github.com/SHKinsem/ss6-control.git
+[submodule "repos/ss6-tcode"]
+	path = repos/ss6-tcode
+	url = https://github.com/SHKinsem/ss6-tcode.git
