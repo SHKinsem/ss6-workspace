@@ -273,6 +273,49 @@ Evidence: private ss6-control `evidence/iap-20261109-multi-motor/` (deployment,
 per-run status/console snapshots, progress, results, gzip raw captures). Public
 summary: `docs/evidence/iap-20261109-multi-motor/acceptance-summary.json`.
 
+## STEP/DIR on two motors (2026-11-10, ss6-tcode)
+
+Setup: id1 and id2, FW207, unloaded. The drive mode is `tc drive stepdir`: FastAccelStepper
+on the RMT, 16 microsteps, with id2 mirroring id1. Motor config was written session-only at
+1500 mA closed loop, 1200 mA stall and 1000 rpm, all approved by the owner.
+
+- **id1 and id2 move together on +90/−180/+90°.** Both return to within 0.03°.
+- **Swapped cables were caught by the follow-error guard, but only after enabling.**
+  - id2's pulses reached id1, which was disabled, so it counted −202 pulses on 0x32 and did
+    not move.
+  - Auto-detection of connector and direction is
+    [ss6-tcode#2](https://github.com/SHKinsem/ss6-tcode/issues/2).
+- **Both motors need `tc dirinv` on the current wiring.** It is a toggle, and it resets at
+  boot.
+- **The command lease is 3 s.** A host must stream input (`tc send`, or a UDP `X`) at least
+  once a second while a motor is enabled. Otherwise the motor faults with "command lease
+  expired".
+- **Funscript results:**
+
+  | Span | Result | Error rms | id2−id1 rms | Lag |
+  |---|---|---|---|---|
+  | 20° | ok | 2.4° | 0.75° | 74 ms |
+  | 100° | ok | 12° | 3.7° | 70 ms |
+  | 500°, follow-error limit 20° | both stopped at 5.6 s | — | — | — |
+  | 500°, follow-error limit 360° | ok, but the motors reach only 294 of the 763 rpm asked | 68° | 3.75° | 78 ms |
+
+- **The lag is inside the motor.**
+  - TCode to stepper target is 4 ms, and target to the RMT pulses is another 4 ms.
+  - Pulses to the motor's position is **64 ms**.
+  - Turning interpolation off (`m 1 cfg set interp 0`) did not change it.
+  - PID (0x21, through `m <id> read 21`) reads `126640 126640 15600 26` on both motors.
+    Which value is which is not verified.
+- **STEP/DIR is noticeably quieter than CAN position streaming**, by the owner's ear.
+- **Wi-Fi.** At a site with 22 access points, the all-channel join scan took 7.6 s, and the
+  4 s join grace treated "ssid not found" as final. The fix is
+  [ss6-bsp#7](https://github.com/SHKinsem/ss6-bsp/pull/7), with a 12 s grace. Afterwards the
+  laptop could reach the board only once over that router (not diagnosed), so the bench ran
+  over USB.
+- **Open:**
+  - The PID field meanings and how PID is written.
+  - Whether a higher position Kp shortens the 64 ms lag.
+  - The follow-error limit at large spans.
+
 ## Coverage matrix
 
 ### ss6-bsp
@@ -284,7 +327,7 @@ summary: `docs/evidence/iap-20261109-multi-motor/acceptance-summary.json`.
 | Transport errors (`TransmitFailed`, `NotRunning`) | Partly | R4 tests | R4 |
 | `txReadiness` Busy deferral, single-shot | Partly. TX is low rate | multi-frame TX plus `can stress` | R2/R4 |
 | Bus-off recovery | No. There is no API, only close + configure + start | R4-1 | R4 |
-| STEP/DIR ×6 (5/4, 16/15, 18/17, 38/37, 40/39, 42/41) | No | new `pins` command, scope on a bare connector | R1 |
+| STEP/DIR ×6 (5/4, 16/15, 18/17, 38/37, 40/39, 42/41) | Slots 1–2 yes (2026-11-10, two motors, ss6-tcode); 3, 5, 6 no | new `pins` command, scope on a bare connector | R1 |
 | Aux STEP/DIR 46/3 | No | `pins aux`, after boot only (strapping pins) | R1 |
 | J1 (13/1/2), SPI, HX711 | No | `pins loop` | R1 |
 | UART 43/44 | No | `uart loop`. The console is USB CDC, so UART0 is probably free **(inf)** | R1 |
