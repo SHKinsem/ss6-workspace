@@ -311,10 +311,30 @@ on the RMT, 16 microsteps, with id2 mirroring id1. Motor config was written sess
   [ss6-bsp#7](https://github.com/SHKinsem/ss6-bsp/pull/7), with a 12 s grace. Afterwards the
   laptop could reach the board only once over that router (not diagnosed), so the bench ran
   over USB.
+- **PID tuning (later the same day).**
+  - The layout comes from the ZDT X V2 manual. 0x21 and 0x4A carry four big-endian u32
+    values, in this order: trapezoid position Kp, direct position Kp, speed Kp, speed Ki.
+  - The command is `m <id> pid set` (session only).
+  - STEP/DIR follows the **direct position Kp**. The factory value is 126640; the manual's
+    example uses 466640.
+
+  | Direct Kp | Span | Lag | Peak rpm (of 763 asked) | Residual rms after shift |
+  |---|---|---|---|---|
+  | 126640 | 500° | 78 ms | 294 | 25° |
+  | 466640 | 20° | 34 ms | — | 0.27° |
+  | 466640 | 500° | 52 ms | 526 | 9.5° |
+  | 800000 | 500° | 44 ms | 572 | 8.9° (id2−id1 rms 3.15°) |
+
+  - The owner heard no difference in noise at 466640.
+- **The follow-error limit is relative.** It is max(floor, percent × command segment); the
+  default is max(20°, 50%), set with `tc fe <floor> <percent>`. The segment is how far
+  the commanded position moved between two TCode commands.
+  - A fixed 20° tripped at the first reversal of the 500° run (error 44°).
+  - The relative limit ran the whole script.
 - **Open:**
-  - The PID field meanings and how PID is written.
-  - Whether a higher position Kp shortens the 64 ms lag.
-  - The follow-error limit at large spans.
+  - Whether to save a Kp in the motor (`save`).
+  - Noise at 800000.
+  - The rest of the gap to 763 rpm.
 
 ## Coverage matrix
 
