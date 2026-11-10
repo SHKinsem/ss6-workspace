@@ -350,7 +350,9 @@ on the RMT, 16 microsteps, with id2 mirroring id1. Motor config was written sess
 - **Saved in the motor (owner, 2026-11-10).** id1 and id2 now keep direct Kp 800000
   across power cycles (`pid set ... save`, checked by read-back). The owner heard no change
   in noise from 126640 through 800000.
-- **Open:** the remaining gap to the 763 rpm the 500° script asks for.
+- **Note on "763 rpm":** it is the average speed of the fastest 59 ms segment of the script
+  at 500°, a near-vertical drop in the plots. The median segment is 117 rpm rising and 353 rpm
+  falling. It is not a target. The owner chose not to pursue it (2026-11-10).
 
 ## Coverage matrix
 
