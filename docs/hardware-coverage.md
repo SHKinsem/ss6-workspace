@@ -331,10 +331,10 @@ on the RMT, 16 microsteps, with id2 mirroring id1. Motor config was written sess
   the commanded position moved between two TCode commands.
   - A fixed 20° tripped at the first reversal of the 500° run (error 44°).
   - The relative limit ran the whole script.
-- **Open:**
-  - Whether to save a Kp in the motor (`save`).
-  - Noise at 800000.
-  - The rest of the gap to 763 rpm.
+- **Saved in the motor (owner, 2026-11-10).** id1 and id2 now keep direct Kp 800000
+  across power cycles (`pid set ... save`, checked by read-back). The owner heard no change
+  in noise from 126640 through 800000.
+- **Open:** the remaining gap to the 763 rpm the 500° script asks for.
 
 ## Coverage matrix
 
