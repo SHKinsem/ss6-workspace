@@ -280,13 +280,29 @@ on the RMT, 16 microsteps, with id2 mirroring id1. Motor config was written sess
 1500 mA closed loop, 1200 mA stall and 1000 rpm, all approved by the owner.
 
 - **id1 and id2 move together on +90/−180/+90°.** Both return to within 0.03°.
-- **Swapped cables were caught by the follow-error guard, but only after enabling.**
-  - id2's pulses reached id1, which was disabled, so it counted −202 pulses on 0x32 and did
-    not move.
-  - Auto-detection of connector and direction is
-    [ss6-tcode#2](https://github.com/SHKinsem/ss6-tcode/issues/2).
-- **Both motors need `tc dirinv` on the current wiring.** It is a toggle, and it resets at
-  boot.
+- **Swapped cables were caught by the follow-error guard, but only after enabling.** id2's
+  pulses reached id1: its 0x32 counter changed by −202.
+- **Correction, from later the same day: a truly disabled drive does not count pulses.**
+  An earlier note here said "id1 counted while disabled and did not move". That was wrong.
+  - After `m dis` (CAN F3 00), 0x32 stayed unchanged while 32 pulses went out on each
+    connector.
+  - With EN level Hold, a drive comes up **enabled** when its power is cycled. The firmware
+    still says Disabled in that case: `Motor` only disables at its own start-up, and
+    `disable()` on a Disabled motor does nothing.
+  - So stray pulses then turn the shaft. After the cable swap, the counters (334, −84) match
+    the angles the motors had moved before they were next enabled (37.5°, −9.4°).
+  - The −202 probably came from the same state. Nobody checked whether id1 moved.
+- **`tc detect` (ss6-bsp#8) finds the connector and the DIR sense.**
+  - It first checks that each drive reports itself disabled (3A bit 0).
+  - It finds the connector without energizing: it toggles each connector's DIR line and
+    reads which motor's Dir bit (0x3D) follows.
+  - It then finds the sense with a 32-step (3.6°) test move per motor at ≤1500 mA,
+    approved by the owner.
+  - Bench: it found both motors on their own connectors, with DIR inverted on both, the same
+    as the manual `tc dirinv`. A 20° funscript then ran with id2−id1 rms 0.06° and a lag of
+    26 ms.
+  - `tc dir <id> normal|inverted` sets the sense explicitly. `tc dirinv` (a toggle, reset at
+    boot) remains.
 - **The command lease is 3 s.** A host must stream input (`tc send`, or a UDP `X`) at least
   once a second while a motor is enabled. Otherwise the motor faults with "command lease
   expired".
