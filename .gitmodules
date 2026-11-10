@@ -22,3 +22,6 @@
 [submodule "repos/ss6-tcode"]
 	path = repos/ss6-tcode
 	url = https://github.com/SHKinsem/ss6-tcode.git
+[submodule "repos/ss6-tenny"]
+	path = repos/ss6-tenny
+	url = https://github.com/SHKinsem/ss6-tenny.git
