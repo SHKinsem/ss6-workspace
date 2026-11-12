@@ -13,6 +13,7 @@ under `repos/` and stays independently buildable and versioned in its own reposi
 | `repos/device-console` | Allocation-free line console: command registry, local/remote sources, ring log for remote readers. Host-tested, no platform dependency | — |
 | `repos/ss6-bsp` | Everything SS6 / ESP32-S3: board policy and pins, the TWAI adapter, `CanTask` (the bus in a 500 Hz task on core 1), Wi-Fi setup (up to 5 saved networks), web console, OTA, the USB-CAN bridge, and `ss6::StepDir` (STEP/DIR pulses on the motor connectors, RMT) | can-device-core, device-console, FastAccelStepper |
 | `repos/ss6-control` | **Application.** Demo and test firmware: motors 1–6 through `zdt_x::Motor` on `ss6::CanTask`, with commands over USB and Wi-Fi and OTA | all of the above except dji-motor-driver and pid-control |
+| `repos/ss6-tenny` | **Application.** The Tenny leg module: a parallel-linkage leg driven by two motors through 4.25:1 (thigh) and 4:1 (shank) herringbone gear stages. Scaffold and requirements only (2026-11-11); mechanism geometry, ratios, limits and tuning live here | the libraries above, as needed |
 
 Merged or retired on 2026-11-09:
 

@@ -81,7 +81,7 @@ Each statement is tagged with where it comes from:
 | Control modes | **Torque control is required.** Position control comes later and may use the driver's STEP/DIR input **[owner]** |
 | Motion | **Continuous trajectory tracking** **[owner]** |
 | Trajectory source | Generated **in advance on a PC** and sent **probably over UDP**, in a way modelled on funscript (timestamped keyframes). The PC will most likely send **Cartesian coordinates**, and the **board solves the linkage kinematics** **[owner]** |
-| Reduction | 3:1 to 6:1, through a large/small **herringbone gear** pair. The exact ratio is not fixed and the gear design is out of scope for now **[owner]** |
+| Reduction | Herringbone gear pair. **Update 2026-11-11 [owner]:** the Tenny leg uses **4.25:1 (thigh, 85:20 teeth) and 4:1 (shank, 80:20 teeth)**. The earlier "3:1 to 6:1" range is superseded for Tenny. Details: `repos/ss6-tenny/docs/leg-requirements.md` |
 | Output speed | Ideally **≥ 200 rpm** at the joint **[owner]** |
 | Output torque | **1–2 N·m per motor** at the joint **[owner]** |
 | Supply | **20 V** **[owner]** |
@@ -326,7 +326,9 @@ rate.
    - Whether the two linkages share one frame (for example a body frame) or each has its
      own.
    - Whether keyframes carry only position, or also velocity, stiffness or force.
-4. Final ratio N, and the herringbone gear backlash (deferred by the owner).
+4. Answered 2026-11-11: the ratios are 4.25:1 (thigh) and 4:1 (shank) for Tenny (`ss6-tenny`).
+   Still open: the herringbone gear backlash (deferred by the owner).
+   The linkage questions in item 3 are now tracked in `repos/ss6-tenny/docs/leg-requirements.md`.
 5. Joint range of motion and the location of the hard stops, for homing and soft limits.
 6. UDP details: is the PC on the same LAN? Is the ESP32 a station or the AP? What is the
    acceptable start latency?
