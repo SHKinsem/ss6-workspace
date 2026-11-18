@@ -25,3 +25,6 @@
 [submodule "repos/ss6-tenny"]
 	path = repos/ss6-tenny
 	url = https://github.com/SHKinsem/ss6-tenny.git
+[submodule "repos/project-foc-driver"]
+	path = repos/project-foc-driver
+	url = https://github.com/SHKinsem/project-foc-driver.git
