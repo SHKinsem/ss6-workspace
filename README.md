@@ -32,6 +32,10 @@ The board support package does not contain motor protocols. Motor drivers do not
 contain board or GPIO knowledge. Applications (Babytech, Tenny) own scheduling,
 safety policy, persistence and network interfaces.
 
+## CANopen joint bench
+
+On this candidate branch, update submodules recursively and build from repos/ss6-control with `pio run -c platformio-canopen.ini`. Firmware binaries, EDS and the USB-CAN upgrade path are in [Project FOC firmware](https://github.com/SHKinsem/Project-FOC-Firmware/tree/feature/canopen-mit-shadow/firmware/docs/canopen-mit.md). Use a single node at 500 kbit/s. The bench only exercises shadow output; see examples/canopen-joint/README.md for commissioning and status commands.
+
 ## Status
 
 Native Wi-Fi motor firmware upgrade: the address-1 X42S FW207 checkpoint passed a
